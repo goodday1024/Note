@@ -214,27 +214,61 @@ class NotesApp {
     }
 
     // 删除笔记
-    deleteNote(noteId) {
+    async deleteNote(noteId) {
         if (!confirm('确定要删除这篇笔记吗？')) return;
         
         const index = this.notes.findIndex(n => n.id === noteId);
         if (index === -1) return;
         
-        this.notes.splice(index, 1);
-        this.saveNotes();
-        this.renderNotesList();
-        
-        // 如果删除的是当前笔记
-        if (this.currentNote && this.currentNote.id === noteId) {
-            if (this.notes.length > 0) {
-                this.loadNote(this.notes[0].id);
-            } else {
-                this.currentNote = null;
-                this.showWelcomeMessage();
-            }
+        // 暂停自动同步，避免删除操作被覆盖
+        const wasAutoSyncRunning = !!this.syncTimer;
+        if (wasAutoSyncRunning) {
+            this.stopAutoSync();
         }
         
-        this.showToast('笔记已删除');
+        try {
+            // 删除笔记
+            this.notes.splice(index, 1);
+            
+            // 立即保存到本地
+            localStorage.setItem('notes', JSON.stringify(this.notes));
+            
+            // 如果启用了云同步，立即同步删除操作到云端
+            if (this.settings.cloudSync) {
+                this.updateSyncIndicator('syncing');
+                await this.syncToCloud();
+                this.updateSyncIndicator('success');
+            }
+            
+            this.renderNotesList();
+            
+            // 如果删除的是当前笔记
+            if (this.currentNote && this.currentNote.id === noteId) {
+                if (this.notes.length > 0) {
+                    this.loadNote(this.notes[0].id);
+                } else {
+                    this.currentNote = null;
+                    this.showWelcomeMessage();
+                }
+            }
+            
+            this.showToast('笔记已删除');
+            
+        } catch (error) {
+            console.error('删除笔记失败:', error);
+            this.showToast('删除失败: ' + error.message, 'error');
+            // 重新加载笔记列表，恢复状态
+            await this.loadNotes();
+            this.renderNotesList();
+        } finally {
+            // 恢复自动同步
+            if (wasAutoSyncRunning && this.settings.cloudSync) {
+                // 延迟1秒后恢复自动同步，确保删除操作完全完成
+                setTimeout(() => {
+                    this.startAutoSync();
+                }, 1000);
+            }
+        }
     }
 
     // 搜索笔记
@@ -418,6 +452,11 @@ class NotesApp {
     // 执行自动同步
     async performAutoSync() {
         if (!this.settings.cloudSync) {
+            return;
+        }
+        
+        // 如果当前没有定时器（可能被删除操作暂停），则不执行同步
+        if (!this.syncTimer) {
             return;
         }
         
@@ -732,11 +771,11 @@ class NotesApp {
     }
 
     // 保存笔记到本地存储
-    async saveNotes() {
+    async saveNotes(skipCloudSync = false) {
         localStorage.setItem('notes', JSON.stringify(this.notes));
         
-        // 如果启用了云同步，同步到云端
-        if (this.settings.cloudSync) {
+        // 如果启用了云同步且未跳过云同步，同步到云端
+        if (this.settings.cloudSync && !skipCloudSync) {
             try {
                 await this.syncToCloud();
             } catch (error) {
