@@ -2,6 +2,7 @@ class NoteSummarizerPopup {
     constructor() {
         this.selectedNoteId = null;
         this.isNewNote = false;
+        this.activeTasks = new Map();
         this.init();
     }
     
@@ -10,6 +11,165 @@ class NoteSummarizerPopup {
         this.setupEventListeners();
         await this.loadNotes();
         await this.syncSettingsFromServer();
+        await this.loadActiveTasks();
+        this.setupProgressListener();
+    }
+    
+    setupProgressListener() {
+        // 监听后台任务进度更新
+        chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+            if (request.action === 'taskProgress') {
+                this.updateTaskProgress(request.task);
+            }
+        });
+    }
+    
+    async loadActiveTasks() {
+        try {
+            const response = await chrome.runtime.sendMessage({ action: 'getActiveTasks' });
+            if (response && response.tasks) {
+                response.tasks.forEach(task => {
+                    this.activeTasks.set(task.id, task);
+                });
+                this.renderActiveTasks();
+            }
+        } catch (error) {
+            console.error('加载活跃任务失败:', error);
+        }
+    }
+    
+    renderActiveTasks() {
+        const container = document.getElementById('activeTasksContainer');
+        if (!container) return;
+        
+        if (this.activeTasks.size === 0) {
+            container.innerHTML = '<div class="no-tasks">暂无进行中的任务</div>';
+            return;
+        }
+        
+        const tasksHtml = Array.from(this.activeTasks.values()).map(task => `
+            <div class="task-item" data-task-id="${task.id}">
+                <div class="task-header">
+                    <span class="task-status status-${task.status}">${this.getStatusText(task.status)}</span>
+                    <button class="cancel-btn" onclick="cancelTask('${task.id}')">取消</button>
+                </div>
+                <div class="task-progress">
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${task.progress}%"></div>
+                    </div>
+                    <span class="progress-text">${task.progress}%</span>
+                </div>
+                ${task.status === 'streaming' && task.result ? `
+                    <div class="stream-content">
+                        <div class="stream-text">${task.result}</div>
+                    </div>
+                ` : ''}
+                ${task.error ? `<div class="task-error">${task.error}</div>` : ''}
+            </div>
+        `).join('');
+        
+        container.innerHTML = tasksHtml;
+    }
+    
+    updateTaskProgress(task) {
+        this.activeTasks.set(task.id, task);
+        this.renderActiveTasks();
+        
+        // 如果任务完成，显示成功消息
+        if (task.status === 'completed') {
+            this.showStatus('总结完成并已保存到笔记！', 'success');
+            // 刷新笔记列表
+            this.loadNotes();
+        } else if (task.status === 'error') {
+            this.showStatus(`任务失败: ${task.error}`, 'error');
+        }
+    }
+    
+    getStatusText(status) {
+        const statusMap = {
+            'pending': '等待中',
+            'processing': '处理中',
+            'streaming': '生成中',
+            'completed': '已完成',
+            'error': '失败',
+            'cancelled': '已取消'
+        };
+        return statusMap[status] || status;
+    }
+    
+    async summarizeAndAppend() {
+        const userId = document.getElementById('userId').value;
+        const apiKey = document.getElementById('apiKey').value;
+        const notesServerUrl = document.getElementById('notesServerUrl').value;
+        const workspace = document.getElementById('workspace').value;
+        
+        // 验证配置
+        if (!userId || !apiKey || !notesServerUrl) {
+            this.showStatus('请先完成所有配置', 'error');
+            return;
+        }
+        
+        if (!this.isNewNote && !this.selectedNoteId) {
+            this.showStatus('请先选择要追加的笔记或选择新建笔记', 'error');
+            return;
+        }
+        
+        try {
+            // 获取当前标签页信息
+            const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+            
+            // 发送任务到后台
+            const response = await chrome.runtime.sendMessage({
+                action: 'startSummarize',
+                data: {
+                    tabId: tab.id,
+                    tabUrl: tab.url,
+                    tabTitle: tab.title,
+                    userId,
+                    apiKey,
+                    notesServerUrl,
+                    workspace,
+                    isNewNote: this.isNewNote,
+                    selectedNoteId: this.selectedNoteId
+                }
+            });
+            
+            if (response.success) {
+                this.showStatus('总结任务已启动，将在后台持续进行', 'success');
+                // 添加到活跃任务列表
+                this.activeTasks.set(response.taskId, {
+                    id: response.taskId,
+                    status: 'pending',
+                    progress: 0,
+                    result: '',
+                    error: null
+                });
+                this.renderActiveTasks();
+            } else {
+                this.showStatus('启动任务失败', 'error');
+            }
+            
+        } catch (error) {
+            console.error('启动总结任务失败:', error);
+            this.showStatus(`启动任务失败: ${error.message}`, 'error');
+        }
+    }
+    
+    async cancelTask(taskId) {
+        try {
+            const response = await chrome.runtime.sendMessage({
+                action: 'cancelTask',
+                taskId: taskId
+            });
+            
+            if (response.success) {
+                this.activeTasks.delete(taskId);
+                this.renderActiveTasks();
+                this.showStatus('任务已取消', 'success');
+            }
+        } catch (error) {
+            console.error('取消任务失败:', error);
+        }
     }
     
     async loadSettings() {
@@ -63,6 +223,11 @@ class NoteSummarizerPopup {
         document.getElementById('refreshNotes').addEventListener('click', () => this.loadNotes());
         document.getElementById('syncSettings').addEventListener('click', () => this.syncSettingsFromServer());
         
+        // 新增：上传设置到服务器的按钮事件
+        if (document.getElementById('uploadSettings')) {
+            document.getElementById('uploadSettings').addEventListener('click', () => this.syncSettingsToServer());
+        }
+        
         // 保存设置当输入改变时
         ['userId', 'apiKey', 'notesServerUrl', 'workspace'].forEach(id => {
             document.getElementById(id).addEventListener('change', () => {
@@ -91,11 +256,17 @@ class NoteSummarizerPopup {
             
             const response = await fetch(`${notesServerUrl}/api/settings?userId=${userId}`);
             if (response.ok) {
-                const serverSettings = await response.json();
+                const serverData = await response.json();
                 
-                // 同步服务器设置到本地
-                if (serverSettings.aiApiKey) {
-                    document.getElementById('apiKey').value = serverSettings.aiApiKey;
+                // 修复：正确读取嵌套的设置结构
+                if (serverData.settings && serverData.settings.aiApiKey) {
+                    document.getElementById('apiKey').value = serverData.settings.aiApiKey;
+                }
+                
+                // 同步其他设置
+                if (serverData.workspaces && serverData.workspaces.length > 0) {
+                    // 可以在这里更新工作区选项
+                    this.updateWorkspaceOptions(serverData.workspaces);
                 }
                 
                 await this.saveSettings();
@@ -107,6 +278,78 @@ class NoteSummarizerPopup {
         } catch (error) {
             console.error('同步设置失败:', error);
             this.showStatus('同步设置失败，将使用本地设置', 'error');
+        }
+    }
+    
+    // 新增：更新工作区选项
+    updateWorkspaceOptions(workspaces) {
+        const workspaceSelect = document.getElementById('workspace');
+        const currentValue = workspaceSelect.value;
+        
+        // 清空现有选项
+        workspaceSelect.innerHTML = '';
+        
+        // 添加服务器同步的工作区
+        workspaces.forEach(workspace => {
+            const option = document.createElement('option');
+            option.value = workspace;
+            option.textContent = workspace === 'public' ? '公共工作区' : 
+                               workspace === 'private' ? '私人工作区' : workspace;
+            workspaceSelect.appendChild(option);
+        });
+        
+        // 恢复之前选中的值（如果存在）
+        if (workspaces.includes(currentValue)) {
+            workspaceSelect.value = currentValue;
+        }
+    }
+    
+    // 新增：将本地设置同步到服务器
+    async syncSettingsToServer() {
+        const userId = document.getElementById('userId').value;
+        const notesServerUrl = document.getElementById('notesServerUrl').value;
+        const apiKey = document.getElementById('apiKey').value;
+        
+        if (!userId || !notesServerUrl) {
+            this.showStatus('请先配置用户ID和服务器地址', 'error');
+            return;
+        }
+        
+        try {
+            this.showStatus('正在上传设置到服务器...', 'loading');
+            
+            const settingsData = {
+                userId: userId,
+                settings: {
+                    aiApiKey: apiKey,
+                    aiEnabled: !!apiKey,
+                    aiBaseUrl: 'https://api.deepseek.com',
+                    aiModel: 'deepseek-chat',
+                    theme: 'light',
+                    fontSize: 14,
+                    autoSave: true,
+                    markdownTheme: 'github',
+                    cloudSync: true
+                },
+                workspaces: ['public', 'private']
+            };
+            
+            const response = await fetch(`${notesServerUrl}/api/settings`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(settingsData)
+            });
+            
+            if (response.ok) {
+                this.showStatus('设置已同步到服务器', 'success');
+            } else {
+                this.showStatus('同步设置到服务器失败', 'error');
+            }
+        } catch (error) {
+            console.error('同步设置到服务器失败:', error);
+            this.showStatus('同步设置到服务器失败', 'error');
         }
     }
     
@@ -384,5 +627,12 @@ class NoteSummarizerPopup {
     }
 }
 
+// 全局函数供HTML调用
+window.cancelTask = function(taskId) {
+    if (window.noteSummarizerPopup) {
+        window.noteSummarizerPopup.cancelTask(taskId);
+    }
+};
+
 // 初始化
-new NoteSummarizerPopup();
+window.noteSummarizerPopup = new NoteSummarizerPopup();

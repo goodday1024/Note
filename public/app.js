@@ -207,10 +207,7 @@ class NotesApp {
         if (confirm('确定要删除这篇笔记吗？')) {
             const noteId = this.currentNote.id;
             
-            // 从本地数组中移除
-            this.notes = this.notes.filter(n => n.id !== noteId);
-            
-            // 如果开启云端同步，同时从服务器删除
+            // 如果开启云端同步，先从服务器删除
             if (this.settings.cloudSync && this.syncStatus.connected) {
                 try {
                     const response = await fetch(`${this.settings.serverUrl}/api/notes/${noteId}?userId=${this.settings.userId}`, {
@@ -224,14 +221,18 @@ class NotesApp {
                     });
                     
                     if (!response.ok) {
-                        console.error('云端删除失败，但本地已删除');
-                        // 即使云端删除失败，也继续本地删除流程
+                        alert('云端删除失败，请检查网络连接');
+                        return; // 如果云端删除失败，不执行本地删除
                     }
                 } catch (error) {
                     console.error('云端删除请求失败:', error);
-                    // 即使云端删除失败，也继续本地删除流程
+                    alert('云端删除失败，请检查网络连接');
+                    return; // 如果云端删除失败，不执行本地删除
                 }
             }
+            
+            // 云端删除成功后，再从本地数组中移除
+            this.notes = this.notes.filter(n => n.id !== noteId);
             
             // 保存更新后的笔记列表
             this.saveNotes();

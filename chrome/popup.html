@@ -118,11 +118,121 @@
             font-size: 12px;
             color: #495057;
         }
+        .active-tasks-section {
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+        }
+        
+        .task-item {
+            border: 1px solid #eee;
+            border-radius: 4px;
+            padding: 8px;
+            margin-bottom: 8px;
+            background: #f9f9f9;
+        }
+        
+        .task-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+        
+        .task-status {
+            font-size: 12px;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-weight: 500;
+        }
+        
+        .status-pending { background: #fff3cd; color: #856404; }
+        .status-processing { background: #d1ecf1; color: #0c5460; }
+        .status-streaming { background: #d4edda; color: #155724; }
+        .status-completed { background: #d4edda; color: #155724; }
+        .status-error { background: #f8d7da; color: #721c24; }
+        .status-cancelled { background: #e2e3e5; color: #383d41; }
+        
+        .cancel-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 11px;
+            cursor: pointer;
+        }
+        
+        .task-progress {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 5px;
+        }
+        
+        .progress-bar {
+            flex: 1;
+            height: 6px;
+            background: #e9ecef;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: #28a745;
+            transition: width 0.3s ease;
+        }
+        
+        .progress-text {
+            font-size: 11px;
+            color: #6c757d;
+            min-width: 30px;
+        }
+        
+        .stream-content {
+            max-height: 100px;
+            overflow-y: auto;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            padding: 5px;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+        
+        .stream-text {
+            white-space: pre-wrap;
+        }
+        
+        .task-error {
+            color: #721c24;
+            font-size: 11px;
+            margin-top: 5px;
+        }
+        
+        .no-tasks {
+            text-align: center;
+            color: #6c757d;
+            font-size: 12px;
+            padding: 10px;
+        }
     </style>
 </head>
 <body>
     <div class="header">
         <h3>网页总结到笔记</h3>
+    </div>
+    
+    <!-- 活跃任务区域 -->
+    <div class="config-section">
+        <label>进行中的任务:</label>
+        <div class="active-tasks-section">
+            <div id="activeTasksContainer">
+                <div class="no-tasks">暂无进行中的任务</div>
+            </div>
+        </div>
     </div>
     
     <div class="config-section">
@@ -155,9 +265,11 @@
         <div class="notes-list" id="notesList">
             <div style="padding: 20px; text-align: center; color: #666;">请先配置用户ID和服务器地址</div>
         </div>
+        <!-- 在按钮组中添加上传设置按钮 -->
         <div class="button-group">
             <button id="refreshNotes" class="secondary">刷新列表</button>
             <button id="syncSettings" class="secondary">同步设置</button>
+            <button id="uploadSettings" class="secondary">上传设置</button>
         </div>
     </div>
     
