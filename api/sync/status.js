@@ -1,6 +1,6 @@
-const { connectDB, Note } = require('../_db');
+const { connectDB, Note } = require('../_db.js');
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   // 更全面的 CORS 配置
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');

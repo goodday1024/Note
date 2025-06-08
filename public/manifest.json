@@ -1,22 +1,43 @@
 {
-  "name": "My Markdown Notes",
-  "short_name": "Markdown",
-  "description": "A modern Markdown note-taking app",
-  "start_url": "/",
-  "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#2eaadc",
-  "orientation": "portrait",
-  "icons": [
-    {
-      "src": "icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png"
-    },
-    {
-      "src": "icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png"
-    }
-  ]
+    "name": "智能笔记应用",
+    "short_name": "智能笔记",
+    "description": "一个功能强大的智能笔记应用，支持 Markdown 编辑、实时预览、主题切换等功能",
+    "start_url": "/index.html",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#2196F3",
+    "orientation": "portrait-primary",
+    "scope": "/",
+    "lang": "zh-CN",
+    "icons": [
+        {
+            "src": "../icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "../icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ],
+    "categories": ["productivity", "utilities"],
+    "screenshots": [],
+    "shortcuts": [
+        {
+            "name": "新建笔记",
+            "short_name": "新建",
+            "description": "创建一篇新笔记",
+            "url": "/index.html?action=new",
+            "icons": [
+                {
+                    "src": "../icon-192.png",
+                    "sizes": "192x192"
+                }
+            ]
+        }
+    ],
+    "prefer_related_applications": false
 }

@@ -2,324 +2,252 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="theme-color" content="#2eaadc">
-    <title>My Markdown | Markdown Notes</title>
-    <link href="https://cdn.bootcdn.net/ajax/libs/KaTeX/0.16.9/katex.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能笔记应用</title>
     <link rel="stylesheet" href="styles.css">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link rel="manifest" href="manifest.json">
-    <meta name="apple-mobile-web-app-title" content="Markdown Notes">
-    <link rel="apple-touch-icon" href="icon-192.png">
+    <meta name="theme-color" content="#2196F3">
+    <link rel="icon" type="image/png" sizes="192x192" href="../icon-192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="../icon-512.png">
 </head>
 <body>
-    <div class="app-container">
-        <!-- Sidebar -->
-        <div class="sidebar" id="sidebar">
-            <div class="sidebar-header">
-                <div class="logo">
-                    <i class="fas fa-sticky-note"></i>
-                    <span>My Markdown</span>
-                </div>
-                <button class="sidebar-toggle" id="sidebarToggle">
-                    <i class="fas fa-bars"></i>
+    <div id="app">
+        <!-- 顶部工具栏 -->
+        <header class="toolbar">
+            <div class="toolbar-left">
+                <button id="menu-btn" class="btn-icon" title="菜单">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/>
+                    </svg>
+                </button>
+                <button id="new-note-btn" class="btn-primary" title="新建笔记">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                    </svg>
+                    新建
                 </button>
             </div>
-            
-            <div class="workspace-selector">
-                <select id="workspaceSelect">
-                    <option value="public">公共工作区</option>
-                    <option value="private">私人工作区</option>
-                </select>
-                <button id="newWorkspace" title="新建工作区">
-                    <i class="fas fa-plus"></i>
+            <div class="toolbar-center">
+                <h1 class="app-title">智能笔记</h1>
+            </div>
+            <div class="toolbar-right">
+                <div id="sync-indicator" class="sync-indicator" title="同步状态" style="display: none;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" class="sync-icon">
+                        <path d="M12,18A6,6 0 0,1 6,12C6,11 6.25,10.03 6.7,9.2L5.24,7.74C4.46,8.97 4,10.43 4,12A8,8 0 0,0 12,20V23L16,19L12,15M12,4V1L8,5L12,9V6A6,6 0 0,1 18,12C18,13 17.75,13.97 17.3,14.8L18.76,16.26C19.54,15.03 20,13.57 20,12A8,8 0 0,0 12,4Z"/>
+                    </svg>
+                    <span class="sync-status">已同步</span>
+                </div>
+                <button id="ai-assistant-btn" class="btn-icon" title="AI 助手">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12,2A2,2 0 0,1 14,4C14,4.74 13.6,5.39 13,5.73V7A1,1 0 0,0 14,8H18A1,1 0 0,0 19,7V5.73C18.4,5.39 18,4.74 18,4A2,2 0 0,1 20,2A2,2 0 0,1 22,4C22,5.11 21.1,6 20,6V8A3,3 0 0,1 17,11H13.5V12.5A3,3 0 0,1 10.5,15.5A3,3 0 0,1 7.5,12.5V11H4A3,3 0 0,1 1,8V6C-0.1,6 -1,5.11 -1,4A2,2 0 0,1 1,2A2,2 0 0,1 3,4C3,4.74 2.6,5.39 2,5.73V7A1,1 0 0,0 3,8H7A1,1 0 0,0 8,7V5.73C7.4,5.39 7,4.74 7,4A2,2 0 0,1 9,2A2,2 0 0,1 11,4C11,4.74 10.6,5.39 10,5.73V7A1,1 0 0,0 11,8H12V6C12.9,6 13.64,5.35 13.87,4.5C13.95,4.33 14,4.17 14,4A2,2 0 0,1 12,2Z"/>
+                    </svg>
+                </button>
+                <button id="search-btn" class="btn-icon" title="搜索">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+                    </svg>
+                </button>
+                <button id="settings-btn" class="btn-icon" title="设置">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.44,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.07,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/>
+                    </svg>
                 </button>
             </div>
-            
-            <div class="sidebar-actions">
-                <button id="newNote" class="btn-primary">
-                    <i class="fas fa-plus"></i> 新建笔记
-                </button>
-                <button id="importNote" class="btn-secondary">
-                    <i class="fas fa-upload"></i> 导入
-                </button>
-                <button id="settings" class="btn-secondary">
-                    <i class="fas fa-cog"></i> 设置
-                </button>
-            </div>
-            
-            <div class="notes-list" id="notesList">
-                <!-- Notes will be listed here -->
-            </div>
-        </div>
-        
-        <!-- Main Content -->
-        <div class="main-content" id="mainContent">
-            <div class="toolbar">
-                <div class="toolbar-left">
-                    <button id="togglePreview" title="切换预览">
-                        <i class="fas fa-eye"></i>
-                    </button>
-                    <button id="toggleFullscreen" title="全屏模式">
-                        <i class="fas fa-expand"></i>
-                    </button>
-                    <button id="exportPDF" title="导出PDF">
-                        <i class="fas fa-file-pdf"></i>
-                    </button>
-                    <button id="exportHTML" title="导出HTML">
-                        <i class="fas fa-file-code"></i>
-                    </button>
-                    <button id="exportMarkdown" title="导出Markdown">
-                        <i class="fas fa-file-download"></i>
+        </header>
+
+        <!-- 主要内容区域 -->
+        <main class="main-content">
+            <!-- 侧边栏 -->
+            <aside class="sidebar" id="sidebar">
+                <div class="sidebar-header">
+                    <input type="text" id="search-input" placeholder="搜索笔记..." class="search-input">
+                </div>
+                <div class="notes-list" id="notes-list">
+                    <div class="empty-state">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor" opacity="0.3">
+                            <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
+                        </svg>
+                        <p>暂无笔记</p>
+                        <p>点击"新建"创建第一篇笔记</p>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- 编辑器区域 -->
+            <section class="editor-section">
+                <div class="editor-header">
+                    <input type="text" id="note-title" placeholder="无标题" class="note-title-input">
+                    <div class="editor-actions">
+                        <button id="ai-improve-btn" class="btn-icon ai-button" title="AI 改进文本">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M9,22A1,1 0 0,1 8,21V18H4A2,2 0 0,1 2,16V4C2,2.89 2.9,2 4,2H20A2,2 0 0,1 22,4V16A2,2 0 0,1 20,18H13.9L10.2,21.71C10,21.9 9.75,22 9.5,22V22H9M10,16V19.08L13.08,16H20V4H4V16H10M7,7H17V9H7V7M7,11H17V13H7V11Z"/>
+                            </svg>
+                        </button>
+                        <button id="ai-summarize-btn" class="btn-icon ai-button" title="AI 总结">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M14,17H7V15H14M17,13H7V11H17M17,9H7V7H17M19,3H5C3.89,3 3,3.89 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5C21,3.89 20.1,3 19,3Z"/>
+                            </svg>
+                        </button>
+                        <button id="ai-translate-btn" class="btn-icon ai-button" title="AI 翻译">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12.87,15.07L10.33,12.56L10.36,12.53C12.1,10.59 13.34,8.36 14.07,6H17V4H10V2H8V4H1V6H12.17C11.5,7.92 10.44,9.75 9,11.35C8.07,10.32 7.3,9.19 6.69,8H4.69C5.42,9.63 6.42,11.17 7.67,12.56L2.58,17.58L4,19L9,14L12.11,17.11L12.87,15.07M18.5,10H16.5L12,22H14L15.12,19H19.87L21,22H23L18.5,10M15.88,17L17.5,12.67L19.12,17H15.88Z"/>
+                            </svg>
+                        </button>
+                        <button id="preview-btn" class="btn-icon" title="预览">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9M12,17A5,5 0 0,1 7,12A5,5 0 0,1 12,7A5,5 0 0,1 17,12A5,5 0 0,1 12,17M12,4.5C7,4.5 2.73,7.61 1,12C2.73,16.39 7,19.5 12,19.5C17,19.5 21.27,16.39 23,12C21.27,7.61 17,4.5 12,4.5Z"/>
+                            </svg>
+                        </button>
+                        <button id="fullscreen-btn" class="btn-icon" title="全屏">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M7,14H5V19H10V17H7V14M12,14H14V17H17V19H12V14M17,10H19V5H14V7H17V10M10,10V7H7V5H12V10H10Z"/>
+                            </svg>
+                        </button>
+                        <button id="save-btn" class="btn-primary" title="保存">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M15,9H5V5H15M12,19A3,3 0 0,1 9,16A3,3 0 0,1 12,13A3,3 0 0,1 15,16A3,3 0 0,1 12,19M17,3H5C3.89,3 3,3.9 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V7L17,3Z"/>
+                            </svg>
+                            保存
+                        </button>
+                    </div>
+                </div>
+                <div class="editor-container">
+                    <div class="editor-wrapper">
+                        <textarea id="editor" placeholder="开始写作..." class="editor-textarea"></textarea>
+                        <div id="preview" class="preview-content" style="display: none;"></div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- 设置面板 -->
+        <div id="settings-panel" class="settings-panel">
+            <div class="settings-content">
+                <div class="settings-header">
+                    <h3>设置</h3>
+                    <button id="close-settings" class="btn-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"/>
+                        </svg>
                     </button>
                 </div>
-                <div class="toolbar-right">
-                    <div class="sync-status" id="syncStatus">
-                        <i class="fas fa-cloud"></i>
-                        <span>未同步</span>
+                <div class="settings-body">
+                    <div class="setting-group">
+                        <label>主题</label>
+                        <select id="theme-select">
+                            <option value="light">浅色</option>
+                            <option value="dark">深色</option>
+                            <option value="auto">跟随系统</option>
+                        </select>
                     </div>
-                    <button id="syncNow" title="立即同步">
-                        <i class="fas fa-sync-alt"></i>
-                    </button>
-                    <button id="deleteNote" title="删除笔记">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </div>
-            </div>
-            
-            <div class="editor-container">
-                <div class="markdown-toolbar">
-                    <button data-action="bold" title="粗体 (Ctrl+B)">
-                        <i class="fas fa-bold"></i>
-                    </button>
-                    <button data-action="italic" title="斜体 (Ctrl+I)">
-                        <i class="fas fa-italic"></i>
-                    </button>
-                    <button data-action="heading" data-level="1" title="标题1">
-                        <i class="fas fa-heading"></i>1
-                    </button>
-                    <button data-action="heading" data-level="2" title="标题2">
-                        <i class="fas fa-heading"></i>2
-                    </button>
-                    <button data-action="heading" data-level="3" title="标题3">
-                        <i class="fas fa-heading"></i>3
-                    </button>
-                    <button data-action="list-ul" title="无序列表">
-                        <i class="fas fa-list-ul"></i>
-                    </button>
-                    <button data-action="list-ol" title="有序列表">
-                        <i class="fas fa-list-ol"></i>
-                    </button>
-                    <button data-action="link" title="链接 (Ctrl+K)">
-                        <i class="fas fa-link"></i>
-                    </button>
-                    <button data-action="image" title="图片">
-                        <i class="fas fa-image"></i>
-                    </button>
-                    <button data-action="code" title="代码块">
-                        <i class="fas fa-code"></i>
-                    </button>
-                    <button data-action="quote" title="引用">
-                        <i class="fas fa-quote-right"></i>
-                    </button>
-                    <button data-action="table" title="表格">
-                        <i class="fas fa-table"></i>
-                    </button>
-                    <button data-action="math" title="数学公式">
-                        <i class="fas fa-square-root-alt">∑</i>
-                    </button>
-                    <button data-action="drawing" title="绘图">
-                        <i class="fas fa-paint-brush"></i>
-                    </button>
-                    <button data-action="attachment" title="附件">
-                        <i class="fas fa-paperclip"></i>
-                    </button>
-                </div>
-                
-                <div class="editor-wrapper">
-                    <textarea id="editor" placeholder="开始写作..."></textarea>
-                    <div id="preview" class="preview markdown-body"></div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Settings Modal -->
-        <div class="modal" id="settingsModal">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h2>设置</h2>
-                    <button class="close-modal">&times;</button>
-                </div>
-                <div class="modal-body">
-                    <div class="settings-section">
-                        <h3>外观</h3>
-                        <div class="setting-item">
-                            <label for="themeSelect">主题:</label>
-                            <select id="themeSelect">
-                                <option value="light">浅色</option>
-                                <option value="dark">深色</option>
-                                <option value="sepia">护眼</option>
-                            </select>
-                        </div>
-                        <div class="setting-item">
-                            <label for="fontSizeSlider">字体大小: <span id="fontSizeValue">14px</span></label>
-                            <input type="range" id="fontSizeSlider" min="10" max="24" value="14">
-                        </div>
-                        <div class="setting-item">
-                            <label for="markdownThemeSelect">Markdown主题:</label>
-                            <select id="markdownThemeSelect">
-                                <option value="github">GitHub</option>
-                                <option value="light">Light</option>
-                                <option value="dark">Dark</option>
-                                <option value="custom">自定义</option>
-                            </select>
-                        </div>
-                        <div class="setting-item custom-theme-container" style="display: none;">
-                            <label for="customThemeUrl">自定义主题URL:</label>
-                            <input type="text" id="customThemeUrl" placeholder="https://...">
-                        </div>
+                    <div class="setting-group">
+                        <label>字体大小</label>
+                        <select id="font-size-select">
+                            <option value="small">小</option>
+                            <option value="medium">中</option>
+                            <option value="large">大</option>
+                        </select>
                     </div>
-                    
-                    <div class="settings-section">
-                        <h3>编辑器</h3>
-                        <div class="setting-item">
-                            <label for="autoSave">
-                                <input type="checkbox" id="autoSave" checked>
-                                自动保存
-                            </label>
-                        </div>
+                    <div class="setting-group">
+                        <label>自动保存</label>
+                        <input type="checkbox" id="auto-save-toggle" checked>
                     </div>
-                    
-                    <div class="settings-section">
-                        <h3>AI助手</h3>
-                        <div class="setting-item">
-                            <label for="aiEnabled">
-                                <input type="checkbox" id="aiEnabled">
-                                启用AI功能
-                            </label>
-                        </div>
-                        <div class="ai-settings" style="display: none;">
-                            <div class="setting-item">
-                                <label for="aiApiKey">API密钥:</label>
-                                <input type="password" id="aiApiKey" placeholder="sk-...">
-                            </div>
-                            <div class="setting-item">
-                                <label for="aiBaseUrl">API基础URL:</label>
-                                <input type="text" id="aiBaseUrl" value="https://api.deepseek.com">
-                            </div>
-                            <div class="setting-item">
-                                <label for="aiModel">AI模型:</label>
-                                <select id="aiModel">
-                                    <option value="deepseek-chat">DeepSeek Chat</option>
-                                    <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
-                                    <option value="gpt-4">GPT-4</option>
-                                </select>
-                            </div>
-                            <div class="setting-info">
-                                <p>使用AI功能: 在笔记中输入 <code>@chat 你的问题</code> 或 <code>@writer 你的要求</code> 然后按 Ctrl+Enter</p>
-                            </div>
-                        </div>
+                    <div class="setting-group">
+                        <label>云同步</label>
+                        <input type="checkbox" id="cloud-sync-toggle">
                     </div>
-                    
-                    <div class="settings-section">
-                        <h3>云同步</h3>
-                        <div class="setting-item">
-                            <label for="cloudSync">
-                                <input type="checkbox" id="cloudSync">
-                                启用云同步
-                            </label>
-                        </div>
-                        <div class="cloud-settings" style="display: none;">
-                            <div class="setting-item">
-                                <label for="serverUrl">服务器URL:</label>
-                                <input type="text" id="serverUrl" placeholder="https://...">
-                            </div>
-                            <div class="setting-item">
-                                <label for="userId">用户ID:</label>
-                                <input type="text" id="userId" placeholder="用户标识">
-                            </div>
-                            <div class="setting-info">
-                                <p>云同步将自动保存您的笔记到服务器，并在多设备间同步。</p>
-                            </div>
-                        </div>
+                    <div class="setting-group">
+                        <label>用户ID</label>
+                        <input type="text" id="user-id-input" placeholder="留空则使用系统生成的ID">
+                        <small style="color: var(--text-secondary); font-size: 12px; margin-top: 4px; display: block;">用于云同步数据隔离，修改后需重新同步</small>
                     </div>
-                    
-                    <div class="settings-section">
-                        <h3>数据管理</h3>
-                        <div class="setting-actions">
-                            <button id="exportSettings" class="btn-secondary">导出设置</button>
-                            <button id="importSettings" class="btn-secondary">导入设置</button>
-                            <button id="resetSettings" class="btn-danger">重置设置</button>
-                        </div>
+                    <div class="setting-group">
+                        <label>AI 功能</label>
+                        <input type="checkbox" id="ai-enabled-toggle">
+                    </div>
+                    <div class="setting-group ai-settings" style="display: none;">
+                        <label>AI 服务商</label>
+                        <select id="ai-provider-select">
+                            <option value="openai">OpenAI</option>
+                            <option value="anthropic">Anthropic</option>
+                            <option value="gemini">Google Gemini</option>
+                            <option value="deepseek">DeepSeek</option>
+                        </select>
+                    </div>
+                    <div class="setting-group ai-settings" style="display: none;">
+                        <label>API 密钥</label>
+                        <input type="password" id="ai-api-key" placeholder="输入 API 密钥">
+                    </div>
+                    <div class="setting-group ai-settings" style="display: none;">
+                        <label>AI 模型</label>
+                        <select id="ai-model-select">
+                            <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                            <option value="gpt-4">GPT-4</option>
+                            <option value="claude-3-sonnet">Claude 3 Sonnet</option>
+                            <option value="gemini-pro">Gemini Pro</option>
+                        </select>
                     </div>
                 </div>
             </div>
         </div>
-        
-        <!-- Drawing Modal -->
-        <div class="modal" id="drawingModal">
-            <div class="modal-content drawing-modal-content">
-                <div class="modal-header">
-                    <h2>绘图</h2>
-                    <button class="close-modal">&times;</button>
+
+        <!-- 加载指示器 -->
+        <div id="loading" class="loading" style="display: none;">
+            <div class="loading-spinner"></div>
+            <p>加载中...</p>
+        </div>
+
+        <!-- AI 聊天面板 -->
+        <div id="ai-chat-panel" class="ai-chat-panel">
+            <div class="ai-chat-content">
+                <div class="ai-chat-header">
+                    <h3>AI 助手</h3>
+                    <div class="ai-chat-controls">
+                        <button id="ai-chat-clear" class="btn-icon" title="清空对话">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z"/>
+                            </svg>
+                        </button>
+                        <button id="close-ai-chat" class="btn-icon">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"/>
+                            </svg>
+                        </button>
+                    </div>
                 </div>
-                <div class="drawing-tools">
-                    <button id="drawingPen" class="active">画笔</button>
-                    <button id="drawingLine">直线</button>
-                    <button id="drawingRect">矩形</button>
-                    <button id="drawingCircle">圆形</button>
-                    <button id="drawingText">文本</button>
-                    <button id="drawingEraser">橡皮</button>
-                    <input type="color" id="drawingColor" value="#000000">
-                    <input type="range" id="drawingSize" min="1" max="20" value="2">
-                    <button id="drawingClear">清空</button>
-                    <button id="drawingSave">保存</button>
+                <div class="ai-chat-messages" id="ai-chat-messages">
+                    <div class="ai-message">
+                        <div class="ai-avatar">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12,2A2,2 0 0,1 14,4C14,4.74 13.6,5.39 13,5.73V7A1,1 0 0,1 12,8A1,1 0 0,1 11,7V5.73C10.4,5.39 10,4.74 10,4A2,2 0 0,1 12,2M21,9V7H15L13.5,7.5C13.1,7.4 12.6,7.4 12.1,7.5L10.5,7H3V9H10L11.4,9.5C11.8,9.6 12.2,9.6 12.6,9.5L14,9H21M12,10.5A0.5,0.5 0 0,1 12.5,11A0.5,0.5 0 0,1 12,11.5A0.5,0.5 0 0,1 11.5,11A0.5,0.5 0 0,1 12,10.5M12,13A1.5,1.5 0 0,1 13.5,14.5A1.5,1.5 0 0,1 12,16A1.5,1.5 0 0,1 10.5,14.5A1.5,1.5 0 0,1 12,13M12,17C14.33,17 16.3,18.12 17.35,19.65C17.75,20.22 17.6,21 17,21.35C16.67,21.53 16.26,21.53 15.93,21.35C15.03,20.92 13.57,20.5 12,20.5C10.43,20.5 8.97,20.92 8.07,21.35C7.74,21.53 7.33,21.53 7,21.35C6.4,21 6.25,20.22 6.65,19.65C7.7,18.12 9.67,17 12,17Z"/>
+                            </svg>
+                        </div>
+                        <div class="message-content">
+                            <p>你好！我是 AI 助手，可以帮助你改进文本、生成摘要、翻译内容，或者回答你的问题。有什么我可以帮助你的吗？</p>
+                        </div>
+                    </div>
                 </div>
-                <canvas id="drawingCanvas" width="800" height="600"></canvas>
+                <div class="ai-chat-input-area">
+                    <div class="ai-chat-input-wrapper">
+                        <textarea id="ai-chat-input" placeholder="输入你的问题..." rows="2"></textarea>
+                        <button id="ai-chat-send" class="btn-primary" disabled>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M2,21L23,12L2,3V10L17,12L2,14V21Z"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="ai-chat-suggestions">
+                        <button class="suggestion-btn" data-suggestion="帮我改进这段文本">改进文本</button>
+                        <button class="suggestion-btn" data-suggestion="请总结这段内容">生成摘要</button>
+                        <button class="suggestion-btn" data-suggestion="请翻译这段文字">翻译文字</button>
+                        <button class="suggestion-btn" data-suggestion="帮我写一篇关于...的文章">写作助手</button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
-    
-    <!-- File input for imports -->
-    <input type="file" id="fileInput" accept=".md,.markdown" style="display: none;">
-    <input type="file" id="imageInput" accept="image/*" style="display: none;">
-    <input type="file" id="fileAttachment" style="display: none;">
-    <input type="file" id="settingsImport" accept=".json" style="display: none;">
-    
-    <!-- Scripts -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
-    <script src="https://cdn.bootcdn.net/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
-    <script src="https://cdn.bootcdn.net/ajax/libs/KaTeX/0.16.9/contrib/auto-render.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    
-    <!-- 模块化脚本 -->
-    <script src="modules/DataManager.js"></script>
-    <script src="modules/NoteManager.js"></script>
-    <script src="modules/CloudSyncManager.js"></script>
-    <script src="modules/UIManager.js"></script>
-    <script src="modules/SettingsManager.js"></script>
-    <script src="modules/AIManager.js"></script>
-    <script src="app-modular.js"></script>
-    
-    <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/sw.js')
-                    .then(registration => {
-                        console.log('SW registered: ', registration);
-                    })
-                    .catch(registrationError => {
-                        console.log('SW registration failed: ', registrationError);
-                    });
-            });
-        }
-    </script>
+
+    <script src="ai-manager.js"></script>
+    <script src="app.js"></script>
 </body>
 </html>
