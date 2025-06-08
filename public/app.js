@@ -206,7 +206,7 @@ class NotesApp {
         
         if (confirm('确定要删除这篇笔记吗？')) {
             const noteId = this.currentNote.id;
-            let cloudDeleteSuccess = false;
+            const noteTitle = this.currentNote.title;
             
             // 如果开启云端同步，必须先成功删除云端数据
             if (this.settings.cloudSync && this.syncStatus.connected) {
@@ -221,42 +221,57 @@ class NotesApp {
                         }
                     });
                     
-                    if (response.ok || response.status === 404) {
-                        cloudDeleteSuccess = true;
-                        console.log('云端删除成功或笔记已不存在');
+                    if (!response.ok) {
+                        const errorData = await response.json().catch(() => ({}));
+                        
+                        if (response.status === 404) {
+                            console.log('笔记在服务器上已不存在，继续本地删除');
+                        } else {
+                            throw new Error(errorData.message || `服务器删除失败: ${response.status}`);
+                        }
                     } else {
-                        throw new Error(`云端删除失败: ${response.status}`);
+                        const result = await response.json();
+                        console.log('服务器删除成功:', result.message);
                     }
+                    
                 } catch (error) {
                     console.error('云端删除失败:', error);
-                    alert('云端删除失败，请检查网络连接后重试');
+                    alert(`删除失败: ${error.message}\n\n请检查网络连接后重试。`);
                     return; // 如果云端删除失败，不执行本地删除
                 }
-            } else {
-                // 如果没有开启云端同步，直接标记为成功
-                cloudDeleteSuccess = true;
             }
             
-            // 只有云端删除成功后才执行本地删除
-            if (cloudDeleteSuccess) {
-                this.notes = this.notes.filter(n => n.id !== noteId);
-                
-                // 保存更新后的笔记列表
-                this.saveNotes();
-                this.renderNotesList();
-                
-                // Load next note or clear editor
-                if (this.notes.length > 0) {
-                    this.loadNote(this.notes[0].id);
-                } else {
-                    this.currentNote = null;
-                    document.getElementById('noteTitle').value = '';
-                    document.getElementById('editor').value = '';
-                    this.updatePreview();
-                }
-                
-                console.log('笔记删除成功');
+            // 执行本地删除
+            const originalNotes = [...this.notes];
+            this.notes = this.notes.filter(n => n.id !== noteId);
+            
+            // 验证本地删除
+            const stillExists = this.notes.find(n => n.id === noteId);
+            if (stillExists) {
+                console.error('本地删除验证失败');
+                this.notes = originalNotes; // 恢复原始数据
+                alert('本地删除失败，请重试');
+                return;
             }
+            
+            // 保存更新后的笔记列表
+            this.saveNotes();
+            this.renderNotesList();
+            
+            // Load next note or clear editor
+            if (this.notes.length > 0) {
+                this.loadNote(this.notes[0].id);
+            } else {
+                this.currentNote = null;
+                document.getElementById('noteTitle').value = '';
+                document.getElementById('editor').value = '';
+                this.updatePreview();
+            }
+            
+            console.log(`笔记 "${noteTitle}" 删除成功`);
+            
+            // 可选：显示成功提示
+            // alert(`笔记 "${noteTitle}" 已成功删除`);
         }
     }
     
