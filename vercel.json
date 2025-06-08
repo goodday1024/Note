@@ -6,7 +6,7 @@
       "destination": "/api/$1"
     },
     {
-      "source": "/(.*\\.(js|css|html|png|jpg|jpeg|gif|svg|ico))",
+      "source": "/(.*\\.(js|css|html|png|jpg|jpeg|gif|svg|ico))$",
       "destination": "/public/$1"
     },
     {
