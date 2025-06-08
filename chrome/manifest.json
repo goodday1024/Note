@@ -1,0 +1,36 @@
+{
+  "manifest_version": 3,
+  "name": "网页内容总结到笔记",
+  "version": "1.1.0",
+  "description": "使用DeepSeek AI总结当前网页内容并追加到Markdown笔记，支持用户同步",
+  "permissions": [
+    "activeTab",
+    "storage",
+    "scripting"
+  ],
+  "host_permissions": [
+    "https://api.deepseek.com/*",
+    "http://localhost:*/*",
+    "https://*.vercel.app/*",
+    "https://*.herokuapp.com/*",
+    "https://*.netlify.app/*"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "总结网页到笔记"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"]
+    }
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "icons": {
+    "16": "icon16.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
+  }
+}
