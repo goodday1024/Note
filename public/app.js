@@ -203,9 +203,16 @@ class NotesApp {
         const title = document.getElementById('note-title').value.trim() || '无标题';
         const content = document.getElementById('editor').value;
         
+        // 更新当前笔记对象
         this.currentNote.title = title;
         this.currentNote.content = content;
         this.currentNote.updatedAt = new Date().toISOString();
+        
+        // 确保在notes数组中也更新了对应的笔记
+        const noteIndex = this.notes.findIndex(note => note.id === this.currentNote.id);
+        if (noteIndex !== -1) {
+            this.notes[noteIndex] = { ...this.currentNote };
+        }
         
         this.saveNotes();
         this.renderNotesList();
@@ -840,6 +847,14 @@ class NotesApp {
         if (!this.settings.cloudSync) return;
         
         try {
+            // 调试日志：检查发送的数据
+            console.log('准备同步到云端的笔记数据:', this.notes.map(note => ({
+                id: note.id,
+                title: note.title,
+                contentLength: note.content ? note.content.length : 0,
+                hasContent: !!note.content
+            })));
+            
             const response = await fetch('/api/sync/notes', {
                 method: 'POST',
                 headers: {
@@ -857,6 +872,14 @@ class NotesApp {
             
             const result = await response.json();
             console.log('同步到云端成功:', result.length, '条笔记');
+            
+            // 调试日志：检查返回的数据
+            console.log('云端返回的笔记数据:', result.map(note => ({
+                id: note.id,
+                title: note.title,
+                contentLength: note.content ? note.content.length : 0,
+                hasContent: !!note.content
+            })));
         } catch (error) {
             console.error('同步到云端失败:', error);
             throw error;
@@ -902,6 +925,14 @@ class NotesApp {
             
             const cloudNotes = await response.json();
             
+            // 调试日志：检查从云端获取的数据
+            console.log('从云端获取的笔记数据:', cloudNotes.map(note => ({
+                id: note.id,
+                title: note.title,
+                contentLength: note.content ? note.content.length : 0,
+                hasContent: !!note.content
+            })));
+            
             // 合并本地和云端笔记
             const mergedNotes = this.mergeNotes(this.notes, cloudNotes);
             
@@ -911,6 +942,14 @@ class NotesApp {
                 localStorage.setItem('notes', JSON.stringify(this.notes));
                 this.renderNotesList();
                 console.log('从云端同步成功:', this.notes.length, '条笔记');
+                
+                // 调试日志：检查合并后的数据
+                console.log('合并后的笔记数据:', this.notes.map(note => ({
+                    id: note.id,
+                    title: note.title,
+                    contentLength: note.content ? note.content.length : 0,
+                    hasContent: !!note.content
+                })));
             }
         } catch (error) {
             console.error('从云端同步失败:', error);
