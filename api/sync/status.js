@@ -1,12 +1,14 @@
 const { connectDB, Note } = require('../_db');
 
 export default async function handler(req, res) {
-  // 配置 CORS
+  // 更全面的 CORS 配置
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept, X-Requested-With, Authorization');
   res.setHeader('Access-Control-Max-Age', '86400');
+  res.setHeader('Access-Control-Allow-Credentials', 'false');
 
+  // 处理预检请求
   if (req.method === 'OPTIONS') {
     res.status(200).end();
     return;
