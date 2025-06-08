@@ -50,254 +50,229 @@
                 <button id="settings" class="btn-secondary">
                     <i class="fas fa-cog"></i> 设置
                 </button>
-                <div class="sync-indicator" id="syncIndicator" style="display: none;">
-                    <i class="fas fa-cloud" id="syncIcon"></i>
-                    <span id="syncText">未连接</span>
-                </div>
             </div>
             
             <div class="notes-list" id="notesList">
-                <!-- Notes will be populated here -->
+                <!-- Notes will be listed here -->
             </div>
         </div>
         
         <!-- Main Content -->
-        <div class="main-content">
-            <!-- Toolbar -->
-            <div class="toolbar" id="toolbar">
+        <div class="main-content" id="mainContent">
+            <div class="toolbar">
                 <div class="toolbar-left">
-                    <button id="saveNote" title="保存">
-                        <i class="fas fa-save"></i>
+                    <button id="togglePreview" title="切换预览">
+                        <i class="fas fa-eye"></i>
                     </button>
-                    <button id="deleteNote" title="删除">
-                        <i class="fas fa-trash"></i>
+                    <button id="toggleFullscreen" title="全屏模式">
+                        <i class="fas fa-expand"></i>
                     </button>
-                    <div class="separator"></div>
                     <button id="exportPDF" title="导出PDF">
                         <i class="fas fa-file-pdf"></i>
                     </button>
                     <button id="exportHTML" title="导出HTML">
                         <i class="fas fa-file-code"></i>
                     </button>
-                    <button id="exportImage" title="导出图片">
-                        <i class="fas fa-image"></i>
-                    </button>
                     <button id="exportMarkdown" title="导出Markdown">
-                        <i class="fas fa-file-alt"></i>
+                        <i class="fas fa-file-download"></i>
                     </button>
                 </div>
-                
                 <div class="toolbar-right">
-                    <button id="togglePreview" title="切换预览">
-                        <i class="fas fa-eye"></i>
+                    <div class="sync-status" id="syncStatus">
+                        <i class="fas fa-cloud"></i>
+                        <span>未同步</span>
+                    </div>
+                    <button id="syncNow" title="立即同步">
+                        <i class="fas fa-sync-alt"></i>
                     </button>
-                    <button id="fullscreen" title="全屏">
-                        <i class="fas fa-expand"></i>
+                    <button id="deleteNote" title="删除笔记">
+                        <i class="fas fa-trash"></i>
                     </button>
                 </div>
             </div>
             
-            <!-- Editor Container -->
             <div class="editor-container">
-                <!-- Markdown Toolbar -->
-                <div class="markdown-toolbar" id="markdownToolbar">
-                    <div class="toolbar-group">
-                        <button data-action="heading" data-level="1" title="标题 1">
-                            <i class="fas fa-heading"></i>1
-                        </button>
-                        <button data-action="heading" data-level="2" title="标题 2">
-                            <i class="fas fa-heading"></i>2
-                        </button>
-                        <button data-action="heading" data-level="3" title="标题 3">
-                            <i class="fas fa-heading"></i>3
-                        </button>
-                    </div>
-                    
-                    <div class="toolbar-group">
-                        <button data-action="bold" title="粗体">
-                            <i class="fas fa-bold"></i>
-                        </button>
-                        <button data-action="italic" title="斜体">
-                            <i class="fas fa-italic"></i>
-                        </button>
-                        <button data-action="strikethrough" title="删除线">
-                            <i class="fas fa-strikethrough"></i>
-                        </button>
-                        <button data-action="code" title="行内代码">
-                            <i class="fas fa-code"></i>
-                        </button>
-                    </div>
-                    
-                    <div class="toolbar-group">
-                        <button data-action="list" data-type="ul" title="无序列表">
-                            <i class="fas fa-list-ul"></i>
-                        </button>
-                        <button data-action="list" data-type="ol" title="有序列表">
-                            <i class="fas fa-list-ol"></i>
-                        </button>
-                        <button data-action="quote" title="引用">
-                            <i class="fas fa-quote-left"></i>
-                        </button>
-                        <button data-action="link" title="链接">
-                            <i class="fas fa-link"></i>
-                        </button>
-                    </div>
-                    
-                    <div class="toolbar-group">
-                        <button data-action="table" title="表格">
-                            <i class="fas fa-table"></i>
-                        </button>
-                        <button data-action="codeblock" title="代码块">
-                            <i class="fas fa-code"></i>
-                        </button>
-                        <button data-action="math" title="数学公式">
-                            <i class="fas fa-square-root-alt"></i>
-                        </button>
-                        <button data-action="image" title="图片">
-                            <i class="fas fa-image"></i>
-                        </button>
-                    </div>
-                    
-                    <div class="toolbar-group">
-                        <button data-action="drawing" title="画板">
-                            <i class="fas fa-paint-brush"></i>
-                        </button>
-                        <button data-action="file" title="文件">
-                            <i class="fas fa-file"></i>
-                        </button>
-                    </div>
+                <div class="markdown-toolbar">
+                    <button data-action="bold" title="粗体 (Ctrl+B)">
+                        <i class="fas fa-bold"></i>
+                    </button>
+                    <button data-action="italic" title="斜体 (Ctrl+I)">
+                        <i class="fas fa-italic"></i>
+                    </button>
+                    <button data-action="heading" data-level="1" title="标题1">
+                        <i class="fas fa-heading"></i>1
+                    </button>
+                    <button data-action="heading" data-level="2" title="标题2">
+                        <i class="fas fa-heading"></i>2
+                    </button>
+                    <button data-action="heading" data-level="3" title="标题3">
+                        <i class="fas fa-heading"></i>3
+                    </button>
+                    <button data-action="list-ul" title="无序列表">
+                        <i class="fas fa-list-ul"></i>
+                    </button>
+                    <button data-action="list-ol" title="有序列表">
+                        <i class="fas fa-list-ol"></i>
+                    </button>
+                    <button data-action="link" title="链接 (Ctrl+K)">
+                        <i class="fas fa-link"></i>
+                    </button>
+                    <button data-action="image" title="图片">
+                        <i class="fas fa-image"></i>
+                    </button>
+                    <button data-action="code" title="代码块">
+                        <i class="fas fa-code"></i>
+                    </button>
+                    <button data-action="quote" title="引用">
+                        <i class="fas fa-quote-right"></i>
+                    </button>
+                    <button data-action="table" title="表格">
+                        <i class="fas fa-table"></i>
+                    </button>
+                    <button data-action="math" title="数学公式">
+                        <i class="fas fa-square-root-alt">∑</i>
+                    </button>
+                    <button data-action="drawing" title="绘图">
+                        <i class="fas fa-paint-brush"></i>
+                    </button>
+                    <button data-action="attachment" title="附件">
+                        <i class="fas fa-paperclip"></i>
+                    </button>
                 </div>
                 
-                <!-- Editor and Preview -->
                 <div class="editor-wrapper">
-                    <div class="editor-pane" id="editorPane">
-                        <input type="text" id="noteTitle" placeholder="无标题" class="note-title">
-                        <textarea id="editor" placeholder="开始写作..."></textarea>
+                    <textarea id="editor" placeholder="开始写作..."></textarea>
+                    <div id="preview" class="preview markdown-body"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Settings Modal -->
+        <div class="modal" id="settingsModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>设置</h2>
+                    <button class="close-modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="settings-section">
+                        <h3>外观</h3>
+                        <div class="setting-item">
+                            <label for="themeSelect">主题:</label>
+                            <select id="themeSelect">
+                                <option value="light">浅色</option>
+                                <option value="dark">深色</option>
+                                <option value="sepia">护眼</option>
+                            </select>
+                        </div>
+                        <div class="setting-item">
+                            <label for="fontSizeSlider">字体大小: <span id="fontSizeValue">14px</span></label>
+                            <input type="range" id="fontSizeSlider" min="10" max="24" value="14">
+                        </div>
+                        <div class="setting-item">
+                            <label for="markdownThemeSelect">Markdown主题:</label>
+                            <select id="markdownThemeSelect">
+                                <option value="github">GitHub</option>
+                                <option value="light">Light</option>
+                                <option value="dark">Dark</option>
+                                <option value="custom">自定义</option>
+                            </select>
+                        </div>
+                        <div class="setting-item custom-theme-container" style="display: none;">
+                            <label for="customThemeUrl">自定义主题URL:</label>
+                            <input type="text" id="customThemeUrl" placeholder="https://...">
+                        </div>
                     </div>
                     
-                    <div class="preview-pane" id="previewPane">
-                        <div id="preview" class="markdown-preview"></div>
+                    <div class="settings-section">
+                        <h3>编辑器</h3>
+                        <div class="setting-item">
+                            <label for="autoSave">
+                                <input type="checkbox" id="autoSave" checked>
+                                自动保存
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="settings-section">
+                        <h3>AI助手</h3>
+                        <div class="setting-item">
+                            <label for="aiEnabled">
+                                <input type="checkbox" id="aiEnabled">
+                                启用AI功能
+                            </label>
+                        </div>
+                        <div class="ai-settings" style="display: none;">
+                            <div class="setting-item">
+                                <label for="aiApiKey">API密钥:</label>
+                                <input type="password" id="aiApiKey" placeholder="sk-...">
+                            </div>
+                            <div class="setting-item">
+                                <label for="aiBaseUrl">API基础URL:</label>
+                                <input type="text" id="aiBaseUrl" value="https://api.deepseek.com">
+                            </div>
+                            <div class="setting-item">
+                                <label for="aiModel">AI模型:</label>
+                                <select id="aiModel">
+                                    <option value="deepseek-chat">DeepSeek Chat</option>
+                                    <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                                    <option value="gpt-4">GPT-4</option>
+                                </select>
+                            </div>
+                            <div class="setting-info">
+                                <p>使用AI功能: 在笔记中输入 <code>@chat 你的问题</code> 或 <code>@writer 你的要求</code> 然后按 Ctrl+Enter</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="settings-section">
+                        <h3>云同步</h3>
+                        <div class="setting-item">
+                            <label for="cloudSync">
+                                <input type="checkbox" id="cloudSync">
+                                启用云同步
+                            </label>
+                        </div>
+                        <div class="cloud-settings" style="display: none;">
+                            <div class="setting-item">
+                                <label for="serverUrl">服务器URL:</label>
+                                <input type="text" id="serverUrl" placeholder="https://...">
+                            </div>
+                            <div class="setting-item">
+                                <label for="userId">用户ID:</label>
+                                <input type="text" id="userId" placeholder="用户标识">
+                            </div>
+                            <div class="setting-info">
+                                <p>云同步将自动保存您的笔记到服务器，并在多设备间同步。</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="settings-section">
+                        <h3>数据管理</h3>
+                        <div class="setting-actions">
+                            <button id="exportSettings" class="btn-secondary">导出设置</button>
+                            <button id="importSettings" class="btn-secondary">导入设置</button>
+                            <button id="resetSettings" class="btn-danger">重置设置</button>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
-    
-    <!-- Modals -->
-    <!-- Settings Modal -->
-    <div id="settingsModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>设置</h3>
-                <button class="modal-close">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="setting-group">
-                    <label>应用主题</label>
-                    <select id="themeSelect">
-                        <option value="light">浅色</option>
-                        <option value="dark">深色</option>
-                    </select>
+        
+        <!-- Drawing Modal -->
+        <div class="modal" id="drawingModal">
+            <div class="modal-content drawing-modal-content">
+                <div class="modal-header">
+                    <h2>绘图</h2>
+                    <button class="close-modal">&times;</button>
                 </div>
-                <div class="setting-group">
-                    <label>Markdown 主题</label>
-                    <select id="markdownThemeSelect">
-                        <option value="github">GitHub</option>
-                        <option value="github-dark">GitHub Dark</option>
-                        <option value="monokai">Monokai</option>
-                        <option value="atom-one-dark">Atom One Dark</option>
-                        <option value="vs">Visual Studio</option>
-                        <option value="vs2015">Visual Studio 2015</option>
-                        <option value="rainbow">Rainbow</option>
-                        <option value="stackoverflow-light">Stack Overflow Light</option>
-                        <option value="stackoverflow-dark">Stack Overflow Dark</option>
-                        <option value="custom">自定义</option>
-                    </select>
-                </div>
-                <div class="setting-group" id="customThemeGroup" style="display: none;">
-                    <label>自定义主题链接</label>
-                    <input type="text" id="customThemeUrl" placeholder="请输入 CSS 文件链接，如：https://example.com/theme.css">
-                    <small style="color: #6b7280; font-size: 12px; margin-top: 4px; display: block;">输入完整的 CSS 文件 URL，将替换当前的代码高亮主题</small>
-                </div>
-                <div class="setting-group">
-                    <label>字体大小</label>
-                    <input type="range" id="fontSizeSlider" min="12" max="20" value="14">
-                    <span id="fontSizeValue">14px</span>
-                </div>
-                <div class="setting-group">
-                    <label>自动保存</label>
-                    <input type="checkbox" id="autoSave" checked>
-                </div>
-                
-                <div class="setting-group">
-                    <h3>AI 功能</h3>
-                </div>
-                <div class="setting-group">
-                    <label for="aiEnabled">启用 AI 功能</label>
-                    <input type="checkbox" id="aiEnabled">
-                </div>
-                <div class="setting-group">
-                    <label for="aiApiKey">API Key</label>
-                    <input type="password" id="aiApiKey" placeholder="请输入 DeepSeek API Key">
-                </div>
-                <div class="setting-group">
-                    <label for="aiBaseUrl">Base URL</label>
-                    <input type="text" id="aiBaseUrl" placeholder="https://api.deepseek.com">
-                </div>
-                <div class="setting-group">
-                    <label for="aiModel">模型名称</label>
-                    <input type="text" id="aiModel" placeholder="deepseek-chat">
-                </div>
-                
-                <div class="setting-group">
-                    <h3>云端同步</h3>
-                </div>
-                <div class="setting-group">
-                    <label for="cloudSync">启用云端同步</label>
-                    <input type="checkbox" id="cloudSync">
-                </div>
-                <div class="setting-group">
-                    <label for="serverUrl">服务器地址</label>
-                    <input type="text" id="serverUrl" placeholder="http://localhost:3000">
-                </div>
-                <div class="setting-group">
-                    <label for="userId">用户ID</label>
-                    <input type="text" id="userId" placeholder="default">
-                    <small style="color: #6b7280; font-size: 12px; margin-top: 4px; display: block;">用于区分不同用户的数据</small>
-                </div>
-                <div class="setting-group">
-                    <button id="syncNow" class="btn btn-primary">立即同步</button>
-                    <button id="syncStatus" class="btn btn-secondary">同步状态</button>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Template Modal -->
-    <div id="templateModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>选择模板</h3>
-                <button class="modal-close">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="template-grid" id="templateGrid">
-                    <!-- Templates will be populated here -->
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Drawing Modal -->
-    <div id="drawingModal" class="modal">
-        <div class="modal-content drawing-modal">
-            <div class="modal-header">
-                <h3>画板</h3>
-                <button class="modal-close">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="drawing-toolbar">
-                    <button id="drawingPen">画笔</button>
+                <div class="drawing-tools">
+                    <button id="drawingPen" class="active">画笔</button>
+                    <button id="drawingLine">直线</button>
+                    <button id="drawingRect">矩形</button>
+                    <button id="drawingCircle">圆形</button>
+                    <button id="drawingText">文本</button>
                     <button id="drawingEraser">橡皮</button>
                     <input type="color" id="drawingColor" value="#000000">
                     <input type="range" id="drawingSize" min="1" max="20" value="2">
@@ -313,6 +288,7 @@
     <input type="file" id="fileInput" accept=".md,.markdown" style="display: none;">
     <input type="file" id="imageInput" accept="image/*" style="display: none;">
     <input type="file" id="fileAttachment" style="display: none;">
+    <input type="file" id="settingsImport" accept=".json" style="display: none;">
     
     <!-- Scripts -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
@@ -322,7 +298,16 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="app.js"></script>
+    
+    <!-- 模块化脚本 -->
+    <script src="modules/DataManager.js"></script>
+    <script src="modules/NoteManager.js"></script>
+    <script src="modules/CloudSyncManager.js"></script>
+    <script src="modules/UIManager.js"></script>
+    <script src="modules/SettingsManager.js"></script>
+    <script src="modules/AIManager.js"></script>
+    <script src="app-modular.js"></script>
+    
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
