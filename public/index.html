@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#2eaadc">
+    <title>My Markdown | Markdown Notes</title>
+    <link href="https://cdn.bootcdn.net/ajax/libs/KaTeX/0.16.9/katex.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <i class="fas fa-sticky-note"></i>
+                    <span>My Markdown</span>
+                </div>
+                <button class="sidebar-toggle" id="sidebarToggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+            
+            <div class="workspace-selector">
+                <select id="workspaceSelect">
+                    <option value="public">公共工作区</option>
+                    <option value="private">私人工作区</option>
+                </select>
+                <button id="newWorkspace" title="新建工作区">
+                    <i class="fas fa-plus"></i>
+                </button>
+            </div>
+            
+            <div class="sidebar-actions">
+                <button id="newNote" class="btn-primary">
+                    <i class="fas fa-plus"></i> 新建笔记
+                </button>
+                <button id="importNote" class="btn-secondary">
+                    <i class="fas fa-upload"></i> 导入
+                </button>
+                <button id="settings" class="btn-secondary">
+                    <i class="fas fa-cog"></i> 设置
+                </button>
+                <div class="sync-indicator" id="syncIndicator" style="display: none;">
+                    <i class="fas fa-cloud" id="syncIcon"></i>
+                    <span id="syncText">未连接</span>
+                </div>
+            </div>
+            
+            <div class="notes-list" id="notesList">
+                <!-- Notes will be populated here -->
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Toolbar -->
+            <div class="toolbar" id="toolbar">
+                <div class="toolbar-left">
+                    <button id="saveNote" title="保存">
+                        <i class="fas fa-save"></i>
+                    </button>
+                    <button id="deleteNote" title="删除">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                    <div class="separator"></div>
+                    <button id="exportPDF" title="导出PDF">
+                        <i class="fas fa-file-pdf"></i>
+                    </button>
+                    <button id="exportHTML" title="导出HTML">
+                        <i class="fas fa-file-code"></i>
+                    </button>
+                    <button id="exportImage" title="导出图片">
+                        <i class="fas fa-image"></i>
+                    </button>
+                    <button id="exportMarkdown" title="导出Markdown">
+                        <i class="fas fa-file-alt"></i>
+                    </button>
+                </div>
+                
+                <div class="toolbar-right">
+                    <button id="togglePreview" title="切换预览">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                    <button id="fullscreen" title="全屏">
+                        <i class="fas fa-expand"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Editor Container -->
+            <div class="editor-container">
+                <!-- Markdown Toolbar -->
+                <div class="markdown-toolbar" id="markdownToolbar">
+                    <div class="toolbar-group">
+                        <button data-action="heading" data-level="1" title="标题 1">
+                            <i class="fas fa-heading"></i>1
+                        </button>
+                        <button data-action="heading" data-level="2" title="标题 2">
+                            <i class="fas fa-heading"></i>2
+                        </button>
+                        <button data-action="heading" data-level="3" title="标题 3">
+                            <i class="fas fa-heading"></i>3
+                        </button>
+                    </div>
+                    
+                    <div class="toolbar-group">
+                        <button data-action="bold" title="粗体">
+                            <i class="fas fa-bold"></i>
+                        </button>
+                        <button data-action="italic" title="斜体">
+                            <i class="fas fa-italic"></i>
+                        </button>
+                        <button data-action="strikethrough" title="删除线">
+                            <i class="fas fa-strikethrough"></i>
+                        </button>
+                        <button data-action="code" title="行内代码">
+                            <i class="fas fa-code"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="toolbar-group">
+                        <button data-action="list" data-type="ul" title="无序列表">
+                            <i class="fas fa-list-ul"></i>
+                        </button>
+                        <button data-action="list" data-type="ol" title="有序列表">
+                            <i class="fas fa-list-ol"></i>
+                        </button>
+                        <button data-action="quote" title="引用">
+                            <i class="fas fa-quote-left"></i>
+                        </button>
+                        <button data-action="link" title="链接">
+                            <i class="fas fa-link"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="toolbar-group">
+                        <button data-action="table" title="表格">
+                            <i class="fas fa-table"></i>
+                        </button>
+                        <button data-action="codeblock" title="代码块">
+                            <i class="fas fa-code"></i>
+                        </button>
+                        <button data-action="math" title="数学公式">
+                            <i class="fas fa-square-root-alt"></i>
+                        </button>
+                        <button data-action="image" title="图片">
+                            <i class="fas fa-image"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="toolbar-group">
+                        <button data-action="drawing" title="画板">
+                            <i class="fas fa-paint-brush"></i>
+                        </button>
+                        <button data-action="file" title="文件">
+                            <i class="fas fa-file"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Editor and Preview -->
+                <div class="editor-wrapper">
+                    <div class="editor-pane" id="editorPane">
+                        <input type="text" id="noteTitle" placeholder="无标题" class="note-title">
+                        <textarea id="editor" placeholder="开始写作..."></textarea>
+                    </div>
+                    
+                    <div class="preview-pane" id="previewPane">
+                        <div id="preview" class="markdown-preview"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modals -->
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>设置</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="setting-group">
+                    <label>应用主题</label>
+                    <select id="themeSelect">
+                        <option value="light">浅色</option>
+                        <option value="dark">深色</option>
+                    </select>
+                </div>
+                <div class="setting-group">
+                    <label>Markdown 主题</label>
+                    <select id="markdownThemeSelect">
+                        <option value="github">GitHub</option>
+                        <option value="github-dark">GitHub Dark</option>
+                        <option value="monokai">Monokai</option>
+                        <option value="atom-one-dark">Atom One Dark</option>
+                        <option value="vs">Visual Studio</option>
+                        <option value="vs2015">Visual Studio 2015</option>
+                        <option value="rainbow">Rainbow</option>
+                        <option value="stackoverflow-light">Stack Overflow Light</option>
+                        <option value="stackoverflow-dark">Stack Overflow Dark</option>
+                        <option value="custom">自定义</option>
+                    </select>
+                </div>
+                <div class="setting-group" id="customThemeGroup" style="display: none;">
+                    <label>自定义主题链接</label>
+                    <input type="text" id="customThemeUrl" placeholder="请输入 CSS 文件链接，如：https://example.com/theme.css">
+                    <small style="color: #6b7280; font-size: 12px; margin-top: 4px; display: block;">输入完整的 CSS 文件 URL，将替换当前的代码高亮主题</small>
+                </div>
+                <div class="setting-group">
+                    <label>字体大小</label>
+                    <input type="range" id="fontSizeSlider" min="12" max="20" value="14">
+                    <span id="fontSizeValue">14px</span>
+                </div>
+                <div class="setting-group">
+                    <label>自动保存</label>
+                    <input type="checkbox" id="autoSave" checked>
+                </div>
+                
+                <div class="setting-group">
+                    <h3>AI 功能</h3>
+                </div>
+                <div class="setting-group">
+                    <label for="aiEnabled">启用 AI 功能</label>
+                    <input type="checkbox" id="aiEnabled">
+                </div>
+                <div class="setting-group">
+                    <label for="aiApiKey">API Key</label>
+                    <input type="password" id="aiApiKey" placeholder="请输入 DeepSeek API Key">
+                </div>
+                <div class="setting-group">
+                    <label for="aiBaseUrl">Base URL</label>
+                    <input type="text" id="aiBaseUrl" placeholder="https://api.deepseek.com">
+                </div>
+                <div class="setting-group">
+                    <label for="aiModel">模型名称</label>
+                    <input type="text" id="aiModel" placeholder="deepseek-chat">
+                </div>
+                
+                <div class="setting-group">
+                    <h3>云端同步</h3>
+                </div>
+                <div class="setting-group">
+                    <label for="cloudSync">启用云端同步</label>
+                    <input type="checkbox" id="cloudSync">
+                </div>
+                <div class="setting-group">
+                    <label for="serverUrl">服务器地址</label>
+                    <input type="text" id="serverUrl" placeholder="http://localhost:3000">
+                </div>
+                <div class="setting-group">
+                    <label for="userId">用户ID</label>
+                    <input type="text" id="userId" placeholder="default">
+                    <small style="color: #6b7280; font-size: 12px; margin-top: 4px; display: block;">用于区分不同用户的数据</small>
+                </div>
+                <div class="setting-group">
+                    <button id="syncNow" class="btn btn-primary">立即同步</button>
+                    <button id="syncStatus" class="btn btn-secondary">同步状态</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Template Modal -->
+    <div id="templateModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>选择模板</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="template-grid" id="templateGrid">
+                    <!-- Templates will be populated here -->
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Drawing Modal -->
+    <div id="drawingModal" class="modal">
+        <div class="modal-content drawing-modal">
+            <div class="modal-header">
+                <h3>画板</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="drawing-toolbar">
+                    <button id="drawingPen">画笔</button>
+                    <button id="drawingEraser">橡皮</button>
+                    <input type="color" id="drawingColor" value="#000000">
+                    <input type="range" id="drawingSize" min="1" max="20" value="2">
+                    <button id="drawingClear">清空</button>
+                    <button id="drawingSave">保存</button>
+                </div>
+                <canvas id="drawingCanvas" width="800" height="600"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <!-- File input for imports -->
+    <input type="file" id="fileInput" accept=".md,.markdown" style="display: none;">
+    <input type="file" id="imageInput" accept="image/*" style="display: none;">
+    <input type="file" id="fileAttachment" style="display: none;">
+    
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/KaTeX/0.16.9/contrib/auto-render.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
