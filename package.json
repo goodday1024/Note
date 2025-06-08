@@ -7,8 +7,8 @@
     "start": "node server.js",
     "dev": "nodemon server.js",
     "client": "python3 -m http.server 8000",
-    "build": "mkdir -p public && cp index.html app.js styles.css public/",
-    "vercel-build": "npm run build"
+    "build": "echo 'Files already in public directory'",
+    "vercel-build": "echo 'Build complete - files already in public directory'"
   },
   "keywords": ["markdown", "notes", "editor", "notion"],
   "author": "Your Name",
