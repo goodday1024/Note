@@ -77,6 +77,81 @@
             <section class="editor-section">
                 <div class="editor-header">
                     <input type="text" id="note-title" placeholder="无标题" class="note-title-input">
+                    <div class="markdown-toolbar">
+                        <button class="markdown-btn" data-syntax="bold" title="粗体 (Ctrl+B)">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M13.5,15.5H10V12.5H13.5A1.5,1.5 0 0,1 15,14A1.5,1.5 0 0,1 13.5,15.5M10,6.5H13A1.5,1.5 0 0,1 14.5,8A1.5,1.5 0 0,1 13,9.5H10M15.6,10.79C16.57,10.11 17.25,9.02 17.25,8C17.25,5.74 15.5,4 13.25,4H7V18H14.04C16.14,18 17.75,16.3 17.75,14.21C17.75,12.69 16.89,11.39 15.6,10.79Z"/>
+                            </svg>
+                        </button>
+                        <button class="markdown-btn" data-syntax="italic" title="斜体 (Ctrl+I)">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M10,4V7H12.21L8.79,15H6V18H14V15H11.79L15.21,7H18V4H10Z"/>
+                            </svg>
+                        </button>
+                        <button class="markdown-btn" data-syntax="strikethrough" title="删除线">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M7.2 9.8C7.2 8.3 8.4 7.1 9.9 7.1S12.6 8.3 12.6 9.8H14.1C14.1 7.5 12.4 5.8 10.1 5.8S6.1 7.5 6.1 9.8C6.1 10.5 6.3 11.1 6.7 11.6H3V13H21V11.6H17.3C17.7 11.1 17.9 10.5 17.9 9.8C17.9 7.5 16.2 5.8 13.9 5.8S9.9 7.5 9.9 9.8H11.4C11.4 8.3 12.6 7.1 14.1 7.1S16.8 8.3 16.8 9.8C16.8 10.5 16.6 11.1 16.2 11.6H7.8C7.4 11.1 7.2 10.5 7.2 9.8Z"/>
+                            </svg>
+                        </button>
+                        <div class="toolbar-separator"></div>
+                        <button class="markdown-btn" data-syntax="h1" title="标题 1">
+                            <span class="markdown-text">H1</span>
+                        </button>
+                        <button class="markdown-btn" data-syntax="h2" title="标题 2">
+                            <span class="markdown-text">H2</span>
+                        </button>
+                        <button class="markdown-btn" data-syntax="h3" title="标题 3">
+                            <span class="markdown-text">H3</span>
+                        </button>
+                        <div class="toolbar-separator"></div>
+                        <button class="markdown-btn" data-syntax="quote" title="引用">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M14,17H17L19,13V7H13V13H16M6,17H9L11,13V7H5V13H8L6,17Z"/>
+                            </svg>
+                        </button>
+                        <button class="markdown-btn" data-syntax="code" title="代码">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M8,3A2,2 0 0,0 6,5V9A2,2 0 0,1 4,11H3V13H4A2,2 0 0,1 6,15V19A2,2 0 0,0 8,21H10V19H8V14A2,2 0 0,0 6,12A2,2 0 0,0 8,10V5H10V3M16,3A2,2 0 0,1 18,5V9A2,2 0 0,0 20,11H21V13H20A2,2 0 0,0 18,15V19A2,2 0 0,1 16,21H14V19H16V14A2,2 0 0,1 18,12A2,2 0 0,1 16,10V5H14V3H16Z"/>
+                            </svg>
+                        </button>
+                        <button class="markdown-btn" data-syntax="codeblock" title="代码块">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M9.4,16.6L4.8,12L9.4,7.4L8,6L2,12L8,18L9.4,16.6M14.6,16.6L19.2,12L14.6,7.4L16,6L22,12L16,18L14.6,16.6Z"/>
+                            </svg>
+                        </button>
+                        <div class="toolbar-separator"></div>
+                        <button class="markdown-btn" data-syntax="ul" title="无序列表">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M7,5H21V7H7V5M7,13V11H21V13H7M4,4.5A1.5,1.5 0 0,1 5.5,6A1.5,1.5 0 0,1 4,7.5A1.5,1.5 0 0,1 2.5,6A1.5,1.5 0 0,1 4,4.5M4,10.5A1.5,1.5 0 0,1 5.5,12A1.5,1.5 0 0,1 4,13.5A1.5,1.5 0 0,1 2.5,12A1.5,1.5 0 0,1 4,10.5M7,19V17H21V19H7M4,16.5A1.5,1.5 0 0,1 5.5,18A1.5,1.5 0 0,1 4,19.5A1.5,1.5 0 0,1 2.5,18A1.5,1.5 0 0,1 4,16.5Z"/>
+                            </svg>
+                        </button>
+                        <button class="markdown-btn" data-syntax="ol" title="有序列表">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M7,13V11H21V13H7M7,19V17H21V19H7M7,7V5H21V7H7M3,8V5H2V4H4V8H3M2,17V16H5V20H2V19H4V18.5H3V17.5H4V17H2M4.25,10A0.75,0.75 0 0,1 5,10.75C5,10.95 4.92,11.14 4.79,11.27L3.12,13H5V14H2V13.08L4,11H2V10H4.25Z"/>
+                            </svg>
+                        </button>
+                        <button class="markdown-btn" data-syntax="checkbox" title="任务列表">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M10,17L5,12L6.41,10.58L10,14.17L17.59,6.58L19,8M19,3H5C3.89,3 3,3.89 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5C21,3.89 20.1,3 19,3Z"/>
+                            </svg>
+                        </button>
+                        <div class="toolbar-separator"></div>
+                        <button class="markdown-btn" data-syntax="link" title="链接">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M3.9,12C3.9,10.29 5.29,8.9 7,8.9H11V7H7A5,5 0 0,0 2,12A5,5 0 0,0 7,17H11V15.1H7C5.29,15.1 3.9,13.71 3.9,12M8,13H16V11H8V13M17,7H13V8.9H17C18.71,8.9 20.1,10.29 20.1,12C20.1,13.71 18.71,15.1 17,15.1H13V17H17A5,5 0 0,0 22,12A5,5 0 0,0 17,7Z"/>
+                            </svg>
+                        </button>
+                        <button class="markdown-btn" data-syntax="image" title="图片">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M8.5,13.5L11,16.5L14.5,12L19,18H5M21,19V5C21,3.89 20.1,3 19,3H5A2,2 0 0,0 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19Z"/>
+                            </svg>
+                        </button>
+                        <button class="markdown-btn" data-syntax="table" title="表格">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M5,4H19A2,2 0 0,1 21,6V18A2,2 0 0,1 19,20H5A2,2 0 0,1 3,18V6A2,2 0 0,1 5,4M5,8V12H11V8H5M13,8V12H19V8H13M5,14V18H11V14H5M13,14V18H19V14H13Z"/>
+                            </svg>
+                        </button>
+                    </div>
                     <div class="editor-actions">
                         <button id="ai-improve-btn" class="btn-icon ai-button" title="AI 改进文本">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">

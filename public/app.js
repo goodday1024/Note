@@ -30,6 +30,7 @@ class NotesApp {
         this.initAI();
         this.initChatHistory();
         this.setupEventListeners();
+        this.initMarkdownToolbar();
         this.applyTheme();
         this.applyFontSize();
         this.updateSettingsUI();
@@ -1483,6 +1484,184 @@ class NotesApp {
     // 初始化聊天历史
     initChatHistory() {
         this.chatHistory = [];
+    }
+
+    // 初始化 Markdown 工具栏
+    initMarkdownToolbar() {
+        const markdownBtns = document.querySelectorAll('.markdown-btn');
+        markdownBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const syntax = btn.dataset.syntax;
+                this.insertMarkdownSyntax(syntax);
+            });
+        });
+
+        // 添加键盘快捷键
+        const editor = document.getElementById('editor');
+        if (editor) {
+            editor.addEventListener('keydown', (e) => {
+                if (e.ctrlKey || e.metaKey) {
+                    switch (e.key.toLowerCase()) {
+                        case 'b':
+                            e.preventDefault();
+                            this.insertMarkdownSyntax('bold');
+                            break;
+                        case 'i':
+                            e.preventDefault();
+                            this.insertMarkdownSyntax('italic');
+                            break;
+                        case 'k':
+                            e.preventDefault();
+                            this.insertMarkdownSyntax('link');
+                            break;
+                    }
+                }
+            });
+        }
+    }
+
+    // 插入 Markdown 语法
+    insertMarkdownSyntax(syntax) {
+        const editor = document.getElementById('editor');
+        if (!editor) return;
+
+        const start = editor.selectionStart;
+        const end = editor.selectionEnd;
+        const selectedText = editor.value.substring(start, end);
+        const beforeText = editor.value.substring(0, start);
+        const afterText = editor.value.substring(end);
+
+        let insertText = '';
+        let cursorOffset = 0;
+
+        switch (syntax) {
+            case 'bold':
+                insertText = `**${selectedText || '粗体文本'}**`;
+                cursorOffset = selectedText ? 0 : -4;
+                break;
+            case 'italic':
+                insertText = `*${selectedText || '斜体文本'}*`;
+                cursorOffset = selectedText ? 0 : -2;
+                break;
+            case 'strikethrough':
+                insertText = `~~${selectedText || '删除线文本'}~~`;
+                cursorOffset = selectedText ? 0 : -4;
+                break;
+            case 'h1':
+                insertText = this.insertHeading(beforeText, selectedText || '标题 1', 1);
+                cursorOffset = selectedText ? 0 : -3;
+                break;
+            case 'h2':
+                insertText = this.insertHeading(beforeText, selectedText || '标题 2', 2);
+                cursorOffset = selectedText ? 0 : -3;
+                break;
+            case 'h3':
+                insertText = this.insertHeading(beforeText, selectedText || '标题 3', 3);
+                cursorOffset = selectedText ? 0 : -3;
+                break;
+            case 'quote':
+                insertText = this.insertQuote(beforeText, selectedText || '引用文本');
+                cursorOffset = selectedText ? 0 : -2;
+                break;
+            case 'code':
+                insertText = `\`${selectedText || '代码'}\``;
+                cursorOffset = selectedText ? 0 : -2;
+                break;
+            case 'codeblock':
+                insertText = this.insertCodeBlock(beforeText, selectedText || '代码块');
+                cursorOffset = selectedText ? 0 : -3;
+                break;
+            case 'ul':
+                insertText = this.insertList(beforeText, selectedText || '列表项', '-');
+                cursorOffset = selectedText ? 0 : -3;
+                break;
+            case 'ol':
+                insertText = this.insertList(beforeText, selectedText || '列表项', '1.');
+                cursorOffset = selectedText ? 0 : -3;
+                break;
+            case 'checkbox':
+                insertText = this.insertCheckbox(beforeText, selectedText || '任务项');
+                cursorOffset = selectedText ? 0 : -3;
+                break;
+            case 'link':
+                const linkText = selectedText || '链接文本';
+                const url = prompt('请输入链接地址:', 'https://');
+                if (url !== null) {
+                    insertText = `[${linkText}](${url})`;
+                    cursorOffset = 0;
+                } else {
+                    return;
+                }
+                break;
+            case 'image':
+                const altText = selectedText || '图片描述';
+                const imageUrl = prompt('请输入图片地址:', 'https://');
+                if (imageUrl !== null) {
+                    insertText = `![${altText}](${imageUrl})`;
+                    cursorOffset = 0;
+                } else {
+                    return;
+                }
+                break;
+            case 'table':
+                insertText = this.insertTable(beforeText);
+                cursorOffset = -15;
+                break;
+            default:
+                return;
+        }
+
+        // 更新编辑器内容
+        editor.value = beforeText + insertText + afterText;
+        
+        // 设置光标位置
+        const newCursorPos = start + insertText.length + cursorOffset;
+        editor.setSelectionRange(newCursorPos, newCursorPos);
+        
+        // 触发输入事件以保存内容
+        editor.dispatchEvent(new Event('input'));
+        
+        // 聚焦编辑器
+        editor.focus();
+    }
+
+    // 插入标题
+    insertHeading(beforeText, text, level) {
+        const prefix = '#'.repeat(level) + ' ';
+        const needsNewline = beforeText && !beforeText.endsWith('\n');
+        return (needsNewline ? '\n' : '') + prefix + text;
+    }
+
+    // 插入引用
+    insertQuote(beforeText, text) {
+        const needsNewline = beforeText && !beforeText.endsWith('\n');
+        return (needsNewline ? '\n' : '') + '> ' + text;
+    }
+
+    // 插入代码块
+    insertCodeBlock(beforeText, text) {
+        const needsNewline = beforeText && !beforeText.endsWith('\n');
+        return (needsNewline ? '\n' : '') + '```\n' + text + '\n```';
+    }
+
+    // 插入列表
+    insertList(beforeText, text, marker) {
+        const needsNewline = beforeText && !beforeText.endsWith('\n');
+        return (needsNewline ? '\n' : '') + marker + ' ' + text;
+    }
+
+    // 插入复选框
+    insertCheckbox(beforeText, text) {
+        const needsNewline = beforeText && !beforeText.endsWith('\n');
+        return (needsNewline ? '\n' : '') + '- [ ] ' + text;
+    }
+
+    // 插入表格
+    insertTable(beforeText) {
+        const needsNewline = beforeText && !beforeText.endsWith('\n');
+        const table = `| 列1 | 列2 | 列3 |\n|-----|-----|-----|\n| 内容1 | 内容2 | 内容3 |`;
+        return (needsNewline ? '\n' : '') + table;
     }
 }
 
