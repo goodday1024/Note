@@ -208,7 +208,10 @@ class NotesApp {
             const noteId = this.currentNote.id;
             const noteTitle = this.currentNote.title;
             
-            // 如果开启云端同步，必须先成功删除云端数据
+            // 记录删除操作（删除优先策略）
+            this.recordDeletedNote(noteId);
+            
+            // 如果开启云端同步，尝试删除云端数据
             if (this.settings.cloudSync && this.syncStatus.connected) {
                 try {
                     const response = await fetch(`${this.settings.serverUrl}/api/notes/${noteId}?userId=${this.settings.userId}`, {
@@ -221,38 +224,18 @@ class NotesApp {
                         }
                     });
                     
-                    if (!response.ok) {
-                        const errorData = await response.json().catch(() => ({}));
-                        
-                        if (response.status === 404) {
-                            console.log('笔记在服务器上已不存在，继续本地删除');
-                        } else {
-                            throw new Error(errorData.message || `服务器删除失败: ${response.status}`);
-                        }
+                    if (response.ok || response.status === 404) {
+                        console.log('云端删除成功');
                     } else {
-                        const result = await response.json();
-                        console.log('服务器删除成功:', result.message);
+                        console.warn('云端删除失败，但已记录删除操作，下次同步时会清理');
                     }
-                    
                 } catch (error) {
-                    console.error('云端删除失败:', error);
-                    alert(`删除失败: ${error.message}\n\n请检查网络连接后重试。`);
-                    return; // 如果云端删除失败，不执行本地删除
+                    console.warn('云端删除请求失败，但已记录删除操作:', error);
                 }
             }
             
             // 执行本地删除
-            const originalNotes = [...this.notes];
             this.notes = this.notes.filter(n => n.id !== noteId);
-            
-            // 验证本地删除
-            const stillExists = this.notes.find(n => n.id === noteId);
-            if (stillExists) {
-                console.error('本地删除验证失败');
-                this.notes = originalNotes; // 恢复原始数据
-                alert('本地删除失败，请重试');
-                return;
-            }
             
             // 保存更新后的笔记列表
             this.saveNotes();
@@ -268,10 +251,7 @@ class NotesApp {
                 this.updatePreview();
             }
             
-            console.log(`笔记 "${noteTitle}" 删除成功`);
-            
-            // 可选：显示成功提示
-            // alert(`笔记 "${noteTitle}" 已成功删除`);
+            console.log(`笔记 "${noteTitle}" 删除成功（删除优先）`);
         }
     }
     
@@ -2626,11 +2606,23 @@ A: 选择要删除的笔记，点击工具栏的删除按钮。
                     'Content-Type': 'application/json'
                 }
             });
+            
             if (response.ok) {
                 const cloudNotes = await response.json();
                 
-                // 开启同步时，直接使用云端数据，不合并
-                this.notes = cloudNotes;
+                // 获取本地已删除的笔记ID列表
+                const localDeletedNotes = this.getDeletedNoteIds();
+                
+                // 过滤掉本地已删除的笔记
+                const filteredCloudNotes = cloudNotes.filter(note => 
+                    !localDeletedNotes.includes(note.id)
+                );
+                
+                // 合并本地和过滤后的云端数据
+                this.notes = this.mergeNotesWithDeletePriority(this.notes, filteredCloudNotes);
+                
+                // 清理云端已删除的笔记
+                await this.cleanupDeletedNotesFromCloud(localDeletedNotes);
                 
                 // 刷新笔记列表
                 this.renderNotesList();
@@ -2648,6 +2640,69 @@ A: 选择要删除的笔记，点击工具栏的删除按钮。
         }
     }
     
+    getDeletedNoteIds() {
+        const deletedNotes = localStorage.getItem('deletedNotes');
+        return deletedNotes ? JSON.parse(deletedNotes) : [];
+    }
+
+    recordDeletedNote(noteId) {
+        const deletedNotes = this.getDeletedNoteIds();
+        if (!deletedNotes.includes(noteId)) {
+            deletedNotes.push(noteId);
+            localStorage.setItem('deletedNotes', JSON.stringify(deletedNotes));
+        }
+    }
+
+    async cleanupDeletedNotesFromCloud(deletedNoteIds) {
+        for (const noteId of deletedNoteIds) {
+            try {
+                await fetch(`${this.settings.serverUrl}/api/notes/${noteId}?userId=${this.settings.userId}`, {
+                    method: 'DELETE',
+                    mode: 'cors',
+                    credentials: 'omit',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                });
+                console.log(`清理云端已删除笔记: ${noteId}`);
+            } catch (error) {
+                console.error(`清理云端笔记失败 ${noteId}:`, error);
+            }
+        }
+    }
+
+    mergeNotesWithDeletePriority(localNotes, cloudNotes) {
+        const merged = new Map();
+        const deletedNotes = this.getDeletedNoteIds();
+        
+        // 添加本地笔记（排除已删除的）
+        localNotes.forEach(note => {
+            if (!deletedNotes.includes(note.id)) {
+                merged.set(note.id, note);
+            }
+        });
+        
+        // 合并云端笔记（排除已删除的，云端优先）
+        cloudNotes.forEach(cloudNote => {
+            if (!deletedNotes.includes(cloudNote.id)) {
+                const localNote = merged.get(cloudNote.id);
+                if (!localNote || new Date(cloudNote.updatedAt) > new Date(localNote.updatedAt)) {
+                    merged.set(cloudNote.id, {
+                        id: cloudNote.id,
+                        title: cloudNote.title,
+                        content: cloudNote.content,
+                        workspace: cloudNote.workspace,
+                        createdAt: cloudNote.createdAt,
+                        updatedAt: cloudNote.updatedAt
+                    });
+                }
+            }
+        });
+        
+        return Array.from(merged.values()).sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+    }
+
     mergeNotes(localNotes, cloudNotes) {
         const merged = new Map();
         
