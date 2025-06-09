@@ -249,28 +249,39 @@ class NotesApp {
     }
 
     // 保存当前笔记
-    saveCurrentNote() {
+    async saveCurrentNote(showToast = true) {
         if (!this.currentNote) return;
-
+    
         const title = document.getElementById('note-title').value.trim() || '无标题';
         const content = document.getElementById('editor').value;
-
+    
         // 更新当前笔记对象
         this.currentNote.title = title;
         this.currentNote.content = content;
         this.currentNote.updatedAt = new Date().toISOString();
-
+    
         // 确保在notes数组中也更新了对应的笔记
         const noteIndex = this.notes.findIndex(note => note.id === this.currentNote.id);
         if (noteIndex !== -1) {
             this.notes[noteIndex] = { ...this.currentNote };
         }
-
+    
         this.saveNotes();
-        this.renderNotesList();
-
+        await this.renderNotesList();
+    
+        // 如果启用云同步，立即同步到云端（实时同步）
+        if (this.settings.cloudSync) {
+            try {
+                await this.syncToCloudSilent();
+            } catch (error) {
+                console.error('实时同步失败:', error);
+            }
+        }
+    
         // 显示保存成功提示
-        this.showToast('笔记已保存');
+        if (showToast) {
+            this.showToast('笔记已保存');
+        }
     }
 
     // 删除笔记
@@ -523,7 +534,7 @@ class NotesApp {
 
         this.updateSyncIndicator('success');
 
-        // 每2秒同步一次
+        // 每15秒同步一次
         this.syncTimer = setInterval(async () => {
             await this.performAutoSync();
         }, 15000);
@@ -586,6 +597,11 @@ class NotesApp {
         if (this.settings.autoSave) {
             this.scheduleAutoSave();
         }
+    
+        // 增加实时同步调度
+        if (this.settings.cloudSync) {
+            this.scheduleRealTimeSync();
+        }
     }
 
     // 内容变化处理
@@ -593,9 +609,14 @@ class NotesApp {
         if (this.isPreviewMode) {
             this.updatePreview();
         }
-
+    
         if (this.settings.autoSave) {
             this.scheduleAutoSave();
+        }
+    
+        // 增加实时同步调度
+        if (this.settings.cloudSync) {
+            this.scheduleRealTimeSync();
         }
     }
 
@@ -604,10 +625,26 @@ class NotesApp {
         if (this.autoSaveTimer) {
             clearTimeout(this.autoSaveTimer);
         }
+    
+        this.autoSaveTimer = setTimeout(async () => {
+            await this.saveCurrentNote(false); // 不显示提示
+        }, 500); // 减少到500毫秒
+    }
 
-        this.autoSaveTimer = setTimeout(() => {
-            this.saveCurrentNote();
-        }, 2000); // 2秒后自动保存
+    scheduleRealTimeSync() {
+        if (this.realTimeSyncTimer) {
+            clearTimeout(this.realTimeSyncTimer);
+        }
+    
+        this.realTimeSyncTimer = setTimeout(async () => {
+            if (this.settings.cloudSync && this.currentNote) {
+                try {
+                    await this.syncToCloudSilent();
+                } catch (error) {
+                    console.error('实时同步失败:', error);
+                }
+            }
+        }, 1000); // 1秒防抖
     }
 
     // 键盘快捷键处理
