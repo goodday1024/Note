@@ -479,7 +479,7 @@ class NotesApp {
         // 每2秒同步一次
         this.syncTimer = setInterval(async () => {
             await this.performAutoSync();
-        }, 3500);
+        }, 8500);
     }
 
     // 停止自动同步
