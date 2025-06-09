@@ -36,7 +36,11 @@ class NotesApp {
         this.applyFontSize();
         this.updateSettingsUI();
         this.renderNotesList();
-        this.startAutoSync();
+        
+        // 只有在启用云同步时才启动自动同步
+        if (this.settings.cloudSync) {
+            this.startAutoSync();
+        }
         
         // 如果没有笔记，显示欢迎信息
         if (this.notes.length === 0) {
@@ -885,10 +889,25 @@ class NotesApp {
             this.settings = { ...this.settings, ...JSON.parse(saved) };
         }
         
+        // 记录原始的云同步状态
+        const originalCloudSync = this.settings.cloudSync;
+        
         // 如果启用了云同步，尝试从云端加载设置
         if (this.settings.cloudSync) {
             try {
                 await this.syncSettingsFromCloud();
+                
+                // 如果从云端同步后cloudSync状态发生变化，需要相应处理
+                if (originalCloudSync !== this.settings.cloudSync) {
+                    if (this.settings.cloudSync) {
+                        // 云同步被启用，但这里不启动自动同步，因为init方法会处理
+                        console.log('云同步状态已从云端更新为启用');
+                    } else {
+                        // 云同步被禁用
+                        this.stopAutoSync();
+                        console.log('云同步状态已从云端更新为禁用');
+                    }
+                }
             } catch (error) {
                 console.error('从云端加载设置失败:', error);
             }
