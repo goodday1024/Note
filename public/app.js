@@ -158,8 +158,35 @@ class NotesApp {
         document.addEventListener('keydown', (e) => this.handleKeyboardShortcuts(e));
 
         // 窗口事件
-        window.addEventListener('beforeunload', () => this.saveCurrentNote());
+        // 窗口事件
+        window.addEventListener('beforeunload', async (e) => {
+            // 保存当前笔记
+            this.saveCurrentNote();
+
+            // 如果启用了云同步，强制同步一次
+            if (this.settings.cloudSync) {
+                try {
+                    // 使用同步方式确保在页面关闭前完成同步
+                    await this.syncToCloud();
+                    console.log('页面关闭前同步完成');
+                } catch (error) {
+                    console.error('页面关闭前同步失败:', error);
+                    // 即使同步失败也不阻止页面关闭
+                }
+            }
+        });
         window.addEventListener('resize', () => this.handleResize());
+        document.addEventListener('visibilitychange', async () => {
+            if (document.hidden && this.settings.cloudSync) {
+                // 页面变为不可见时（切换标签页），进行同步
+                try {
+                    await this.syncToCloud();
+                    console.log('标签页切换时同步完成');
+                } catch (error) {
+                    console.error('标签页切换时同步失败:', error);
+                }
+            }
+        });
     }
 
     // 创建新笔记
