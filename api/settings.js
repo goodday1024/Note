@@ -1,4 +1,4 @@
-const { connectDB, UserSettings } = require('./_db.js');
+const { connectDB, UserSettings } = require('./_db');
 
 module.exports = async function handler(req, res) {
   // 配置 CORS
