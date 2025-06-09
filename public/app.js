@@ -26,7 +26,7 @@ class NotesApp {
 
     // 初始化应用
     async init() {
-        this.loadSettings();
+        await this.loadSettings();
         await this.loadNotes();
         this.initAI();
         this.initChatHistory();
@@ -652,13 +652,13 @@ class NotesApp {
     // 切换云同步
     async toggleCloudSync(enabled) {
         this.settings.cloudSync = enabled;
-        this.saveSettings();
         document.getElementById('cloud-sync-toggle').checked = enabled;
         
         if (enabled) {
             this.showToast('正在启用云同步...');
             try {
                 await this.syncFromCloud();
+                await this.syncSettingsFromCloud();
                 this.showToast('云同步已启用');
                 // 启动自动同步
                 this.startAutoSync();
@@ -676,6 +676,13 @@ class NotesApp {
             // 停止自动同步
             this.stopAutoSync();
             this.updateSyncIndicator('hidden');
+        }
+        
+        // 保存设置
+        try {
+            await this.saveSettingsAndSync();
+        } catch (error) {
+            console.error('保存设置失败:', error);
         }
     }
 
@@ -847,13 +854,44 @@ class NotesApp {
     // 保存设置到本地存储
     saveSettings() {
         localStorage.setItem('settings', JSON.stringify(this.settings));
+        
+        // 如果启用了云同步，异步同步设置到云端（不等待）
+        if (this.settings.cloudSync) {
+            this.syncSettingsToCloud().catch(error => {
+                console.error('同步设置到云端失败:', error);
+            });
+        }
+    }
+    
+    // 保存设置到本地存储和云端（等待同步完成）
+    async saveSettingsAndSync() {
+        localStorage.setItem('settings', JSON.stringify(this.settings));
+        
+        // 如果启用了云同步，同步设置到云端
+        if (this.settings.cloudSync) {
+            try {
+                await this.syncSettingsToCloud();
+            } catch (error) {
+                console.error('同步设置到云端失败:', error);
+                throw error;
+            }
+        }
     }
 
-    // 从本地存储加载设置
-    loadSettings() {
+    // 从本地存储和云端加载设置
+    async loadSettings() {
         const saved = localStorage.getItem('settings');
         if (saved) {
             this.settings = { ...this.settings, ...JSON.parse(saved) };
+        }
+        
+        // 如果启用了云同步，尝试从云端加载设置
+        if (this.settings.cloudSync) {
+            try {
+                await this.syncSettingsFromCloud();
+            } catch (error) {
+                console.error('从云端加载设置失败:', error);
+            }
         }
     }
 
@@ -1079,6 +1117,64 @@ class NotesApp {
         } catch (error) {
             console.error('检查同步状态失败:', error);
             return null;
+        }
+    }
+    
+    // 同步设置到云端
+    async syncSettingsToCloud() {
+        if (!this.settings.cloudSync) return;
+        
+        try {
+            const response = await fetch('/api/settings', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    userId: this.getUserId(),
+                    settings: this.settings
+                })
+            });
+            
+            if (!response.ok) {
+                throw new Error(`同步设置失败: ${response.status}`);
+            }
+            
+            console.log('设置同步到云端成功');
+        } catch (error) {
+            console.error('同步设置到云端失败:', error);
+            throw error;
+        }
+    }
+    
+    // 从云端同步设置
+    async syncSettingsFromCloud() {
+        if (!this.settings.cloudSync) return;
+        
+        try {
+            const response = await fetch(`/api/settings?userId=${this.getUserId()}`);
+            
+            if (!response.ok) {
+                throw new Error(`获取云端设置失败: ${response.status}`);
+            }
+            
+            const cloudSettings = await response.json();
+            
+            if (cloudSettings && cloudSettings.settings) {
+                // 合并云端设置到本地设置
+                const mergedSettings = { ...this.settings, ...cloudSettings.settings };
+                
+                // 检查是否有变化
+                if (JSON.stringify(mergedSettings) !== JSON.stringify(this.settings)) {
+                    this.settings = mergedSettings;
+                    localStorage.setItem('settings', JSON.stringify(this.settings));
+                    this.updateSettingsUI();
+                    console.log('从云端同步设置成功');
+                }
+            }
+        } catch (error) {
+            console.error('从云端同步设置失败:', error);
+            throw error;
         }
     }
 
