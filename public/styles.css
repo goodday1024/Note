@@ -643,7 +643,8 @@ body {
 .setting-group select,
 .setting-group input[type="text"],
 .setting-group input[type="email"],
-.setting-group input[type="password"] {
+.setting-group input[type="password"],
+.setting-group input[type="url"] {
     width: 100%;
     padding: 10px 12px;
     border: 1px solid var(--border-color);
@@ -658,7 +659,8 @@ body {
 .setting-group select:focus,
 .setting-group input[type="text"]:focus,
 .setting-group input[type="email"]:focus,
-.setting-group input[type="password"]:focus {
+.setting-group input[type="password"]:focus,
+.setting-group input[type="url"]:focus {
     outline: none;
     border-color: var(--primary-color);
 }
