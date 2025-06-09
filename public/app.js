@@ -44,9 +44,6 @@ class NotesApp {
                 await new Promise(resolve => setTimeout(resolve, 1500));
                 // 重新激活云同步
                 cst.addEventListener('onload', (e) => this.toggleCloudSync(e.target.checked));
-                // 等待 1.5s
-                await new Promise(resolve => setTimeout(resolve, 500));
-
                 // 重新启动自动同步
                 this.startAutoSync();
 
