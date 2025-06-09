@@ -37,12 +37,12 @@ class NotesApp {
                 // 先停止可能存在的自动同步
                 this.stopAutoSync();
 
-                // 重新从云端同步数据（模拟重新打开云同步）
-                this.settings.cloudSync = false;
-                //等待 0.5s
+                // 取消打开云同步
+                this.toggleCloudSync(e.target.checked)
+                //等待 1.5s
                 await new Promise(resolve => setTimeout(resolve, 1500));
                 // 重新激活云同步
-                this.settings.cloudSync = true;
+                this.toggleCloudSync(e.target.checked)
                 await this.syncFromCloud();
                 await this.syncSettingsFromCloud();
 
