@@ -45,6 +45,9 @@ class NotesApp {
                 // 重新激活云同步
                 cst.addEventListener('onload', (e) => this.toggleCloudSync(e.target.checked));
                 // 重新启动自动同步
+                await this.syncFromCloud();
+                await this.syncSettingsFromCloud();
+
                 this.startAutoSync();
 
                 this.showToast('云同步已重新激活，数据已同步');
