@@ -37,12 +37,16 @@ class NotesApp {
                 // 先停止可能存在的自动同步
                 this.stopAutoSync();
 
+                const cst = document.getElementById('cloud-sync-toggle');
                 // 取消打开云同步
-                this.toggleCloudSync(e.target.checked)
+                cst.addEventListener('onload', (e) => this.toggleCloudSync(e.target.checked));
                 //等待 1.5s
                 await new Promise(resolve => setTimeout(resolve, 1500));
                 // 重新激活云同步
-                this.toggleCloudSync(e.target.checked)
+                cst.addEventListener('onload', (e) => this.toggleCloudSync(e.target.checked));
+                // 等待 1.5s
+                await new Promise(resolve => setTimeout(resolve, 500));
+
                 await this.syncFromCloud();
                 await this.syncSettingsFromCloud();
 
