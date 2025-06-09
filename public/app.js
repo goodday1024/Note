@@ -366,25 +366,53 @@ class NotesApp {
         preview.innerHTML = this.markdownToHtml(content);
     }
 
-    // 简单的 Markdown 转 HTML
+    // 使用 marked.js 和 KaTeX 的 Markdown 转 HTML
     markdownToHtml(markdown) {
-        let html = markdown
-            // 标题
-            .replace(/^### (.*$)/gim, '<h3>$1</h3>')
-            .replace(/^## (.*$)/gim, '<h2>$1</h2>')
-            .replace(/^# (.*$)/gim, '<h1>$1</h1>')
-            // 粗体
-            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-            // 斜体
-            .replace(/\*(.*?)\*/g, '<em>$1</em>')
-            // 代码
-            .replace(/`(.*?)`/g, '<code>$1</code>')
-            // 链接
-            .replace(/\[([^\]]+)\]\(([^\)]+)\)/g, '<a href="$2" target="_blank">$1</a>')
-            // 换行
-            .replace(/\n/g, '<br>');
-        
-        return html;
+        try {
+            // 配置 marked.js
+            marked.setOptions({
+                breaks: true,
+                gfm: true,
+                tables: true,
+                sanitize: false,
+                smartLists: true,
+                smartypants: true,
+                highlight: function(code, lang) {
+                    // 简单的代码高亮
+                    return `<code class="language-${lang || 'text'}">${this.escapeHtml(code)}</code>`;
+                }.bind(this)
+            });
+            
+            // 使用 marked 解析 Markdown
+            let html = marked.parse(markdown);
+            
+            // 渲染数学公式
+            if (typeof renderMathInElement !== 'undefined') {
+                // 创建临时容器来渲染数学公式
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = html;
+                
+                // 渲染 KaTeX 公式
+                renderMathInElement(tempDiv, {
+                    delimiters: [
+                        {left: '$$', right: '$$', display: true},
+                        {left: '$', right: '$', display: false},
+                        {left: '\\[', right: '\\]', display: true},
+                        {left: '\\(', right: '\\)', display: false}
+                    ],
+                    throwOnError: false,
+                    errorColor: '#cc0000'
+                });
+                
+                html = tempDiv.innerHTML;
+            }
+            
+            return html;
+        } catch (error) {
+            console.error('Markdown 解析错误:', error);
+            // 降级到简单的文本显示
+            return `<pre>${this.escapeHtml(markdown)}</pre>`;
+        }
     }
 
     // 切换全屏模式
@@ -1647,6 +1675,14 @@ class NotesApp {
                 insertText = this.insertTable(beforeText);
                 cursorOffset = -15;
                 break;
+            case 'math-inline':
+                insertText = `$${selectedText || 'x^2 + y^2 = z^2'}$`;
+                cursorOffset = selectedText ? 0 : -1;
+                break;
+            case 'math-block':
+                insertText = this.insertMathBlock(beforeText, selectedText || 'E = mc^2');
+                cursorOffset = selectedText ? 0 : -3;
+                break;
             default:
                 return;
         }
@@ -1699,8 +1735,16 @@ class NotesApp {
     // 插入表格
     insertTable(beforeText) {
         const needsNewline = beforeText && !beforeText.endsWith('\n');
-        const table = `| 列1 | 列2 | 列3 |\n|-----|-----|-----|\n| 内容1 | 内容2 | 内容3 |`;
+        const table = `| 列1 | 列2 | 列3 |
+|-----|-----|-----|
+| 内容1 | 内容2 | 内容3 |`;
         return (needsNewline ? '\n' : '') + table;
+    }
+
+    // 插入数学公式块
+    insertMathBlock(beforeText, formula) {
+        const needsNewline = beforeText && !beforeText.endsWith('\n');
+        return (needsNewline ? '\n' : '') + `$$\n${formula}\n$$`;
     }
 }
 
