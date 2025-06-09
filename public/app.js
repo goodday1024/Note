@@ -27,7 +27,23 @@ class NotesApp {
     // 初始化应用
     async init() {
         await this.loadSettings();
-        await this.loadNotes();
+
+        // 强制刷新笔记列表 - 每次打开网页都重新同步
+        if (this.settings.cloudSync) {
+            try {
+                // 先从云端获取最新数据
+                await this.syncFromCloud();
+                this.showToast('笔记列表已刷新');
+            } catch (error) {
+                console.error('强制刷新失败:', error);
+                // 如果云端同步失败，仍然加载本地数据
+                await this.loadNotes();
+            }
+        } else {
+            // 如果未启用云同步，正常加载本地笔记
+            await this.loadNotes();
+        }
+
         this.initAI();
         this.initChatHistory();
         this.setupEventListeners();
@@ -36,12 +52,12 @@ class NotesApp {
         this.applyFontSize();
         this.updateSettingsUI();
         this.renderNotesList();
-        
+
         // 只有在启用云同步时才启动自动同步
         if (this.settings.cloudSync) {
             this.startAutoSync();
         }
-        
+
         // 如果没有笔记，显示欢迎信息
         if (this.notes.length === 0) {
             this.showWelcomeMessage();
@@ -58,12 +74,12 @@ class NotesApp {
         const newNoteBtn = document.getElementById('new-note-btn');
         const searchBtn = document.getElementById('search-btn');
         const settingsBtn = document.getElementById('settings-btn');
-        
+
         if (menuBtn) menuBtn.addEventListener('click', () => this.toggleSidebar());
         if (newNoteBtn) newNoteBtn.addEventListener('click', () => this.createNote());
         if (searchBtn) searchBtn.addEventListener('click', () => this.focusSearch());
         if (settingsBtn) settingsBtn.addEventListener('click', () => this.toggleSettings());
-        
+
         // 编辑器按钮
         const aiImproveBtn = document.getElementById('ai-improve-btn');
         const aiSummarizeBtn = document.getElementById('ai-summarize-btn');
@@ -72,7 +88,7 @@ class NotesApp {
         const previewBtn = document.getElementById('preview-btn');
         const fullscreenBtn = document.getElementById('fullscreen-btn');
         const saveBtn = document.getElementById('save-btn');
-        
+
         if (aiImproveBtn) aiImproveBtn.addEventListener('click', () => this.improveTextWithAI());
         if (aiSummarizeBtn) aiSummarizeBtn.addEventListener('click', () => this.summarizeWithAI());
         if (aiTranslateBtn) aiTranslateBtn.addEventListener('click', () => this.translateWithAI());
@@ -80,7 +96,7 @@ class NotesApp {
         if (previewBtn) previewBtn.addEventListener('click', () => this.togglePreview());
         if (fullscreenBtn) fullscreenBtn.addEventListener('click', () => this.toggleFullscreen());
         if (saveBtn) saveBtn.addEventListener('click', () => this.saveCurrentNote());
-        
+
         // 设置面板
         const closeSettings = document.getElementById('close-settings');
         const themeSelect = document.getElementById('theme-select');
@@ -94,7 +110,7 @@ class NotesApp {
         const aiModelSelect = document.getElementById('ai-model-select');
         const markdownDemoBtn = document.getElementById('markdown-demo-btn');
         const customStyleUrlInput = document.getElementById('custom-style-url');
-        
+
         if (closeSettings) closeSettings.addEventListener('click', () => this.toggleSettings());
         if (themeSelect) themeSelect.addEventListener('change', (e) => this.changeTheme(e.target.value));
         if (fontSizeSelect) fontSizeSelect.addEventListener('change', (e) => this.changeFontSize(e.target.value));
@@ -107,13 +123,13 @@ class NotesApp {
         if (markdownDemoBtn) markdownDemoBtn.addEventListener('click', () => this.showMarkdownDemo());
         if (customStyleUrlInput) customStyleUrlInput.addEventListener('input', (e) => this.updateCustomStyleUrl(e.target.value));
         if (aiModelSelect) aiModelSelect.addEventListener('change', (e) => this.changeAIModel(e.target.value));
-        
+
         // AI 聊天面板
         const closeAIChat = document.getElementById('close-ai-chat');
         const aiChatClear = document.getElementById('ai-chat-clear');
         const aiChatInput = document.getElementById('ai-chat-input');
         const aiChatSend = document.getElementById('ai-chat-send');
-        
+
         if (closeAIChat) closeAIChat.addEventListener('click', () => this.toggleAIChat());
         if (aiChatClear) aiChatClear.addEventListener('click', () => this.clearAIChat());
         if (aiChatInput) {
@@ -121,26 +137,26 @@ class NotesApp {
             aiChatInput.addEventListener('keydown', (e) => this.onAIChatKeyDown(e));
         }
         if (aiChatSend) aiChatSend.addEventListener('click', () => this.sendAIMessage());
-        
+
         // AI 聊天建议按钮
         document.querySelectorAll('.suggestion-btn').forEach(btn => {
             btn.addEventListener('click', (e) => this.onSuggestionClick(e.target.dataset.suggestion));
         });
-        
+
         // 编辑器事件
         const noteTitle = document.getElementById('note-title');
         const editor = document.getElementById('editor');
-        
+
         if (noteTitle) noteTitle.addEventListener('input', () => this.onTitleChange());
         if (editor) editor.addEventListener('input', () => this.onContentChange());
-        
+
         // 搜索
         const searchInputForEvent = document.getElementById('search-input');
         if (searchInputForEvent) searchInputForEvent.addEventListener('input', (e) => this.searchNotes(e.target.value));
-        
+
         // 键盘快捷键
         document.addEventListener('keydown', (e) => this.handleKeyboardShortcuts(e));
-        
+
         // 窗口事件
         window.addEventListener('beforeunload', () => this.saveCurrentNote());
         window.addEventListener('resize', () => this.handleResize());
@@ -152,9 +168,9 @@ class NotesApp {
         if (this.isCreatingNote) {
             return;
         }
-        
+
         this.isCreatingNote = true;
-        
+
         const note = {
             id: this.generateId(),
             title: '无标题',
@@ -163,12 +179,12 @@ class NotesApp {
             updatedAt: new Date().toISOString(),
             tags: []
         };
-        
+
         this.notes.unshift(note);
         this.saveNotes();
         this.renderNotesList();
         this.loadNote(note.id);
-        
+
         // 聚焦标题输入框
         setTimeout(() => {
             document.getElementById('note-title').focus();
@@ -181,26 +197,26 @@ class NotesApp {
     loadNote(noteId) {
         const note = this.notes.find(n => n.id === noteId);
         if (!note) return;
-        
+
         // 保存当前笔记
         if (this.currentNote) {
             this.saveCurrentNote();
         }
-        
+
         this.currentNote = note;
-        
+
         // 更新UI
         document.getElementById('note-title').value = note.title;
         document.getElementById('editor').value = note.content;
-        
+
         // 更新预览
         if (this.isPreviewMode) {
             this.updatePreview();
         }
-        
+
         // 更新笔记列表选中状态
         this.updateNotesListSelection(noteId);
-        
+
         // 隐藏空状态
         this.hideEmptyState();
     }
@@ -208,24 +224,24 @@ class NotesApp {
     // 保存当前笔记
     saveCurrentNote() {
         if (!this.currentNote) return;
-        
+
         const title = document.getElementById('note-title').value.trim() || '无标题';
         const content = document.getElementById('editor').value;
-        
+
         // 更新当前笔记对象
         this.currentNote.title = title;
         this.currentNote.content = content;
         this.currentNote.updatedAt = new Date().toISOString();
-        
+
         // 确保在notes数组中也更新了对应的笔记
         const noteIndex = this.notes.findIndex(note => note.id === this.currentNote.id);
         if (noteIndex !== -1) {
             this.notes[noteIndex] = { ...this.currentNote };
         }
-        
+
         this.saveNotes();
         this.renderNotesList();
-        
+
         // 显示保存成功提示
         this.showToast('笔记已保存');
     }
@@ -233,32 +249,32 @@ class NotesApp {
     // 删除笔记
     async deleteNote(noteId) {
         if (!confirm('确定要删除这篇笔记吗？')) return;
-        
+
         const index = this.notes.findIndex(n => n.id === noteId);
         if (index === -1) return;
-        
+
         // 暂停自动同步，避免删除操作被覆盖
         const wasAutoSyncRunning = !!this.syncTimer;
         if (wasAutoSyncRunning) {
             this.stopAutoSync();
         }
-        
+
         try {
             // 删除笔记
             this.notes.splice(index, 1);
-            
+
             // 立即保存到本地
             localStorage.setItem('notes', JSON.stringify(this.notes));
-            
+
             // 如果启用了云同步，立即同步删除操作到云端
             if (this.settings.cloudSync) {
                 this.updateSyncIndicator('syncing');
                 await this.syncToCloud();
                 this.updateSyncIndicator('success');
             }
-            
+
             this.renderNotesList();
-            
+
             // 如果删除的是当前笔记
             if (this.currentNote && this.currentNote.id === noteId) {
                 if (this.notes.length > 0) {
@@ -268,9 +284,9 @@ class NotesApp {
                     this.showWelcomeMessage();
                 }
             }
-            
+
             this.showToast('笔记已删除');
-            
+
         } catch (error) {
             console.error('删除笔记失败:', error);
             this.showToast('删除失败: ' + error.message, 'error');
@@ -290,20 +306,20 @@ class NotesApp {
 
     // 搜索笔记
     searchNotes(query) {
-        const filteredNotes = query.trim() === '' 
-            ? this.notes 
-            : this.notes.filter(note => 
+        const filteredNotes = query.trim() === ''
+            ? this.notes
+            : this.notes.filter(note =>
                 note.title.toLowerCase().includes(query.toLowerCase()) ||
                 note.content.toLowerCase().includes(query.toLowerCase())
             );
-        
+
         this.renderNotesList(filteredNotes);
     }
 
     // 渲染笔记列表
     renderNotesList(notes = this.notes) {
         const notesList = document.getElementById('notes-list');
-        
+
         if (notes.length === 0) {
             notesList.innerHTML = `
                 <div class="empty-state">
@@ -316,7 +332,7 @@ class NotesApp {
             `;
             return;
         }
-        
+
         notesList.innerHTML = notes.map(note => `
             <div class="note-item ${this.currentNote && this.currentNote.id === note.id ? 'active' : ''}" 
                  data-note-id="${note.id}">
@@ -330,7 +346,7 @@ class NotesApp {
                 </button>
             </div>
         `).join('');
-        
+
         // 添加点击事件
         notesList.querySelectorAll('.note-item').forEach(item => {
             item.addEventListener('click', (e) => {
@@ -339,7 +355,7 @@ class NotesApp {
                 }
             });
         });
-        
+
         // 添加删除按钮事件
         notesList.querySelectorAll('.delete-note-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
@@ -355,7 +371,7 @@ class NotesApp {
         const editor = document.getElementById('editor');
         const preview = document.getElementById('preview');
         const previewBtn = document.getElementById('preview-btn');
-        
+
         if (this.isPreviewMode) {
             editor.style.display = 'none';
             preview.style.display = 'block';
@@ -386,36 +402,36 @@ class NotesApp {
                 sanitize: false,
                 smartLists: true,
                 smartypants: true,
-                highlight: function(code, lang) {
+                highlight: function (code, lang) {
                     // 简单的代码高亮
                     return `<code class="language-${lang || 'text'}">${this.escapeHtml(code)}</code>`;
                 }.bind(this)
             });
-            
+
             // 使用 marked 解析 Markdown
             let html = marked.parse(markdown);
-            
+
             // 渲染数学公式
             if (typeof renderMathInElement !== 'undefined') {
                 // 创建临时容器来渲染数学公式
                 const tempDiv = document.createElement('div');
                 tempDiv.innerHTML = html;
-                
+
                 // 渲染 KaTeX 公式
                 renderMathInElement(tempDiv, {
                     delimiters: [
-                        {left: '$$', right: '$$', display: true},
-                        {left: '$', right: '$', display: false},
-                        {left: '\\[', right: '\\]', display: true},
-                        {left: '\\(', right: '\\)', display: false}
+                        { left: '$$', right: '$$', display: true },
+                        { left: '$', right: '$', display: false },
+                        { left: '\\[', right: '\\]', display: true },
+                        { left: '\\(', right: '\\)', display: false }
                     ],
                     throwOnError: false,
                     errorColor: '#cc0000'
                 });
-                
+
                 html = tempDiv.innerHTML;
             }
-            
+
             return html;
         } catch (error) {
             console.error('Markdown 解析错误:', error);
@@ -428,7 +444,7 @@ class NotesApp {
     toggleFullscreen() {
         this.isFullscreen = !this.isFullscreen;
         document.body.classList.toggle('fullscreen', this.isFullscreen);
-        
+
         const fullscreenBtn = document.getElementById('fullscreen-btn');
         if (fullscreenBtn) {
             fullscreenBtn.classList.toggle('active', this.isFullscreen);
@@ -445,15 +461,15 @@ class NotesApp {
     updateSyncIndicator(status, message = '') {
         const indicator = document.getElementById('sync-indicator');
         const statusText = indicator.querySelector('.sync-status');
-        
+
         if (!this.settings.cloudSync) {
             indicator.style.display = 'none';
             return;
         }
-        
+
         indicator.style.display = 'flex';
         indicator.className = 'sync-indicator ' + status;
-        
+
         switch (status) {
             case 'syncing':
                 statusText.textContent = '同步中...';
@@ -472,14 +488,14 @@ class NotesApp {
     // 启动自动同步
     startAutoSync() {
         this.stopAutoSync();
-        
+
         if (!this.settings.cloudSync) {
             this.updateSyncIndicator('hidden');
             return;
         }
-        
+
         this.updateSyncIndicator('success');
-        
+
         // 每2秒同步一次
         this.syncTimer = setInterval(async () => {
             await this.performAutoSync();
@@ -499,21 +515,21 @@ class NotesApp {
         if (!this.settings.cloudSync) {
             return;
         }
-        
+
         // 如果当前没有定时器（可能被删除操作暂停），则不执行同步
         if (!this.syncTimer) {
             return;
         }
-        
+
         try {
             this.updateSyncIndicator('syncing');
-            
+
             // 先同步到云端
             await this.syncToCloudSilent();
-            
+
             // 再从云端同步
             await this.syncFromCloudSilent();
-            
+
             this.updateSyncIndicator('success');
             this.lastSyncTime = new Date();
         } catch (error) {
@@ -550,7 +566,7 @@ class NotesApp {
         if (this.isPreviewMode) {
             this.updatePreview();
         }
-        
+
         if (this.settings.autoSave) {
             this.scheduleAutoSave();
         }
@@ -561,7 +577,7 @@ class NotesApp {
         if (this.autoSaveTimer) {
             clearTimeout(this.autoSaveTimer);
         }
-        
+
         this.autoSaveTimer = setTimeout(() => {
             this.saveCurrentNote();
         }, 2000); // 2秒后自动保存
@@ -574,25 +590,25 @@ class NotesApp {
             e.preventDefault();
             this.saveCurrentNote();
         }
-        
+
         // Ctrl/Cmd + N: 新建笔记
         if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
             e.preventDefault();
             this.createNote();
         }
-        
+
         // Ctrl/Cmd + P: 切换预览
         if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
             e.preventDefault();
             this.togglePreview();
         }
-        
+
         // F11: 全屏
         if (e.key === 'F11') {
             e.preventDefault();
             this.toggleFullscreen();
         }
-        
+
         // Escape: 退出全屏或关闭面板
         if (e.key === 'Escape') {
             if (this.isFullscreen) {
@@ -624,10 +640,10 @@ class NotesApp {
 
     // 应用主题
     applyTheme() {
-        const theme = this.settings.theme === 'auto' 
+        const theme = this.settings.theme === 'auto'
             ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
             : this.settings.theme;
-        
+
         document.documentElement.setAttribute('data-theme', theme);
         document.getElementById('theme-select').value = this.settings.theme;
     }
@@ -657,7 +673,7 @@ class NotesApp {
     async toggleCloudSync(enabled) {
         this.settings.cloudSync = enabled;
         document.getElementById('cloud-sync-toggle').checked = enabled;
-        
+
         if (enabled) {
             this.showToast('正在启用云同步...');
             try {
@@ -681,7 +697,7 @@ class NotesApp {
             this.stopAutoSync();
             this.updateSyncIndicator('hidden');
         }
-        
+
         // 保存设置
         try {
             await this.saveSettingsAndSync();
@@ -696,15 +712,15 @@ class NotesApp {
         const messageDiv = document.createElement('div');
         messageDiv.className = `message-toast message-${type}`;
         messageDiv.textContent = message;
-        
+
         // 添加到页面
         document.body.appendChild(messageDiv);
-        
+
         // 显示动画
         setTimeout(() => {
             messageDiv.classList.add('show');
         }, 10);
-        
+
         // 3秒后自动隐藏
         setTimeout(() => {
             messageDiv.classList.remove('show');
@@ -739,7 +755,7 @@ class NotesApp {
 - **Esc**: 退出全屏或关闭面板
 
 开始创建您的第一篇笔记吧！`;
-        
+
         this.hideEmptyState();
     }
 
@@ -777,9 +793,9 @@ class NotesApp {
             z-index: 10000;
             animation: fadeIn 0.3s ease-in;
         `;
-        
+
         document.body.appendChild(toast);
-        
+
         // 自动移除
         setTimeout(() => {
             toast.style.animation = 'fadeOut 0.3s ease-out';
@@ -801,7 +817,7 @@ class NotesApp {
         const date = new Date(dateString);
         const now = new Date();
         const diff = now - date;
-        
+
         if (diff < 60000) { // 1分钟内
             return '刚刚';
         } else if (diff < 3600000) { // 1小时内
@@ -825,7 +841,7 @@ class NotesApp {
     // 保存笔记到本地存储
     async saveNotes(skipCloudSync = false) {
         localStorage.setItem('notes', JSON.stringify(this.notes));
-        
+
         // 如果启用了云同步且未跳过云同步，同步到云端
         if (this.settings.cloudSync && !skipCloudSync) {
             try {
@@ -843,7 +859,7 @@ class NotesApp {
         if (saved) {
             this.notes = JSON.parse(saved);
         }
-        
+
         // 如果启用了云同步，从云端同步
         if (this.settings.cloudSync) {
             try {
@@ -858,7 +874,7 @@ class NotesApp {
     // 保存设置到本地存储
     saveSettings() {
         localStorage.setItem('settings', JSON.stringify(this.settings));
-        
+
         // 如果启用了云同步，异步同步设置到云端（不等待）
         if (this.settings.cloudSync) {
             this.syncSettingsToCloud().catch(error => {
@@ -866,11 +882,11 @@ class NotesApp {
             });
         }
     }
-    
+
     // 保存设置到本地存储和云端（等待同步完成）
     async saveSettingsAndSync() {
         localStorage.setItem('settings', JSON.stringify(this.settings));
-        
+
         // 如果启用了云同步，同步设置到云端
         if (this.settings.cloudSync) {
             try {
@@ -888,15 +904,15 @@ class NotesApp {
         if (saved) {
             this.settings = { ...this.settings, ...JSON.parse(saved) };
         }
-        
+
         // 记录原始的云同步状态
         const originalCloudSync = this.settings.cloudSync;
-        
+
         // 如果启用了云同步，尝试从云端加载设置
         if (this.settings.cloudSync) {
             try {
                 await this.syncSettingsFromCloud();
-                
+
                 // 如果从云端同步后cloudSync状态发生变化，需要相应处理
                 if (originalCloudSync !== this.settings.cloudSync) {
                     if (this.settings.cloudSync) {
@@ -921,20 +937,20 @@ class NotesApp {
         const autoSaveToggle = document.getElementById('auto-save-toggle');
         const cloudSyncToggle = document.getElementById('cloud-sync-toggle');
         const userIdInput = document.getElementById('user-id-input');
-        
+
         if (themeSelect) themeSelect.value = this.settings.theme;
         if (fontSizeSelect) fontSizeSelect.value = this.settings.fontSize;
         if (autoSaveToggle) autoSaveToggle.checked = this.settings.autoSave;
         if (cloudSyncToggle) cloudSyncToggle.checked = this.settings.cloudSync;
         if (userIdInput) userIdInput.value = this.settings.userId || '';
-        
+
         // 更新自定义样式URL
         const customStyleUrlInput = document.getElementById('custom-style-url');
         if (customStyleUrlInput) customStyleUrlInput.value = this.settings.customStyleUrl || '';
-        
+
         // 更新AI设置
         this.updateAIUI();
-        
+
         // 应用自定义样式
         this.applyCustomStyle();
     }
@@ -942,7 +958,7 @@ class NotesApp {
     // 云端同步方法
     async syncToCloud() {
         if (!this.settings.cloudSync) return;
-        
+
         try {
             // 调试日志：检查发送的数据
             console.log('准备同步到云端的笔记数据:', this.notes.map(note => ({
@@ -951,7 +967,7 @@ class NotesApp {
                 contentLength: note.content ? note.content.length : 0,
                 hasContent: !!note.content
             })));
-            
+
             const response = await fetch('/api/sync/notes', {
                 method: 'POST',
                 headers: {
@@ -962,14 +978,14 @@ class NotesApp {
                     userId: this.getUserId()
                 })
             });
-            
+
             if (!response.ok) {
                 throw new Error(`同步失败: ${response.status}`);
             }
-            
+
             const result = await response.json();
             console.log('同步到云端成功:', result.length, '条笔记');
-            
+
             // 调试日志：检查返回的数据
             console.log('云端返回的笔记数据:', result.map(note => ({
                 id: note.id,
@@ -982,11 +998,11 @@ class NotesApp {
             throw error;
         }
     }
-    
+
     // 静默同步到云端（不抛出错误）
     async syncToCloudSilent() {
         if (!this.settings.cloudSync) return;
-        
+
         try {
             const response = await fetch('/api/sync/notes', {
                 method: 'POST',
@@ -998,30 +1014,30 @@ class NotesApp {
                     userId: this.getUserId()
                 })
             });
-            
+
             if (!response.ok) {
                 throw new Error(`同步失败: ${response.status}`);
             }
-            
+
             const result = await response.json();
         } catch (error) {
             // 静默处理错误，不抛出
             console.error('静默同步到云端失败:', error);
         }
     }
-    
+
     async syncFromCloud() {
         if (!this.settings.cloudSync) return;
-        
+
         try {
             const response = await fetch(`/api/notes?userId=${this.getUserId()}`);
-            
+
             if (!response.ok) {
                 throw new Error(`获取云端数据失败: ${response.status}`);
             }
-            
+
             const cloudNotes = await response.json();
-            
+
             // 调试日志：检查从云端获取的数据
             console.log('从云端获取的笔记数据:', cloudNotes.map(note => ({
                 id: note.id,
@@ -1029,17 +1045,17 @@ class NotesApp {
                 contentLength: note.content ? note.content.length : 0,
                 hasContent: !!note.content
             })));
-            
+
             // 合并本地和云端笔记
             const mergedNotes = this.mergeNotes(this.notes, cloudNotes);
-            
-            if (mergedNotes.length !== this.notes.length || 
+
+            if (mergedNotes.length !== this.notes.length ||
                 JSON.stringify(mergedNotes) !== JSON.stringify(this.notes)) {
                 this.notes = mergedNotes;
                 localStorage.setItem('notes', JSON.stringify(this.notes));
                 this.renderNotesList();
                 console.log('从云端同步成功:', this.notes.length, '条笔记');
-                
+
                 // 调试日志：检查合并后的数据
                 console.log('合并后的笔记数据:', this.notes.map(note => ({
                     id: note.id,
@@ -1053,24 +1069,24 @@ class NotesApp {
             throw error;
         }
     }
-    
+
     // 静默从云端同步（不抛出错误）
     async syncFromCloudSilent() {
         if (!this.settings.cloudSync) return;
-        
+
         try {
             const response = await fetch(`/api/notes?userId=${this.getUserId()}`);
-            
+
             if (!response.ok) {
                 throw new Error(`获取云端数据失败: ${response.status}`);
             }
-            
+
             const cloudNotes = await response.json();
-            
+
             // 合并本地和云端笔记
             const mergedNotes = this.mergeNotes(this.notes, cloudNotes);
-            
-            if (mergedNotes.length !== this.notes.length || 
+
+            if (mergedNotes.length !== this.notes.length ||
                 JSON.stringify(mergedNotes) !== JSON.stringify(this.notes)) {
                 this.notes = mergedNotes;
                 localStorage.setItem('notes', JSON.stringify(this.notes));
@@ -1081,16 +1097,16 @@ class NotesApp {
             console.error('静默从云端同步失败:', error);
         }
     }
-    
+
     // 合并本地和云端笔记
     mergeNotes(localNotes, cloudNotes) {
         const notesMap = new Map();
-        
+
         // 先添加本地笔记
         localNotes.forEach(note => {
             notesMap.set(note.id, note);
         });
-        
+
         // 合并云端笔记（云端的更新时间更新的会覆盖本地）
         cloudNotes.forEach(cloudNote => {
             const localNote = notesMap.get(cloudNote.id);
@@ -1098,20 +1114,20 @@ class NotesApp {
                 notesMap.set(cloudNote.id, cloudNote);
             }
         });
-        
+
         // 转换为数组并按更新时间排序
-        return Array.from(notesMap.values()).sort((a, b) => 
+        return Array.from(notesMap.values()).sort((a, b) =>
             new Date(b.updatedAt) - new Date(a.updatedAt)
         );
     }
-    
+
     // 获取用户ID（优先使用用户设置的ID，否则使用系统生成的ID）
     getUserId() {
         // 如果用户设置了自定义ID，使用自定义ID
         if (this.settings.userId && this.settings.userId.trim()) {
             return this.settings.userId.trim();
         }
-        
+
         // 否则使用系统生成的ID
         let userId = localStorage.getItem('userId');
         if (!userId) {
@@ -1120,29 +1136,29 @@ class NotesApp {
         }
         return userId;
     }
-    
+
     // 检查云端同步状态
     async checkSyncStatus() {
         if (!this.settings.cloudSync) return null;
-        
+
         try {
             const response = await fetch(`/api/sync/status?userId=${this.getUserId()}`);
-            
+
             if (!response.ok) {
                 throw new Error(`获取同步状态失败: ${response.status}`);
             }
-            
+
             return await response.json();
         } catch (error) {
             console.error('检查同步状态失败:', error);
             return null;
         }
     }
-    
+
     // 同步设置到云端
     async syncSettingsToCloud() {
         if (!this.settings.cloudSync) return;
-        
+
         try {
             const response = await fetch('/api/settings', {
                 method: 'POST',
@@ -1154,35 +1170,35 @@ class NotesApp {
                     settings: this.settings
                 })
             });
-            
+
             if (!response.ok) {
                 throw new Error(`同步设置失败: ${response.status}`);
             }
-            
+
             console.log('设置同步到云端成功');
         } catch (error) {
             console.error('同步设置到云端失败:', error);
             throw error;
         }
     }
-    
+
     // 从云端同步设置
     async syncSettingsFromCloud() {
         if (!this.settings.cloudSync) return;
-        
+
         try {
             const response = await fetch(`/api/settings?userId=${this.getUserId()}`);
-            
+
             if (!response.ok) {
                 throw new Error(`获取云端设置失败: ${response.status}`);
             }
-            
+
             const cloudSettings = await response.json();
-            
+
             if (cloudSettings && cloudSettings.settings) {
                 // 合并云端设置到本地设置
                 const mergedSettings = { ...this.settings, ...cloudSettings.settings };
-                
+
                 // 检查是否有变化
                 if (JSON.stringify(mergedSettings) !== JSON.stringify(this.settings)) {
                     this.settings = mergedSettings;
@@ -1206,7 +1222,7 @@ class NotesApp {
     updateAIUI() {
         const aiEnabled = this.settings.aiEnabled;
         const aiSettings = document.querySelectorAll('.ai-settings');
-        
+
         aiSettings.forEach(setting => {
             setting.style.display = aiEnabled ? 'block' : 'none';
         });
@@ -1225,7 +1241,7 @@ class NotesApp {
         document.getElementById('ai-enabled-toggle').checked = aiEnabled;
         document.getElementById('ai-provider-select').value = this.settings.aiProvider;
         document.getElementById('ai-api-key').value = this.settings.aiApiKey;
-        
+
         // 先更新模型选项，再设置当前模型值
         this.updateAIModelOptions();
         document.getElementById('ai-model-select').value = this.settings.aiModel;
@@ -1392,13 +1408,13 @@ $$
             updatedAt: new Date().toISOString(),
             tags: []
         };
-        
+
         this.notes.unshift(note);
         this.saveNotes();
         this.renderNotesList();
         this.loadNote(note.id);
         this.showMessage('Markdown 演示笔记已创建');
-        
+
         // 关闭设置面板
         this.toggleSettings();
     }
@@ -1406,10 +1422,10 @@ $$
     updateAIModelOptions() {
         const modelSelect = document.getElementById('ai-model-select');
         const provider = this.settings.aiProvider;
-        
+
         // 清空现有选项
         modelSelect.innerHTML = '';
-        
+
         // 根据服务商添加对应的模型选项
         const modelOptions = {
             openai: [
@@ -1431,7 +1447,7 @@ $$
                 { value: 'deepseek-reasoner', text: 'DeepSeek Reasoner' }
             ]
         };
-        
+
         const options = modelOptions[provider] || [];
         options.forEach(option => {
             const optionElement = document.createElement('option');
@@ -1439,7 +1455,7 @@ $$
             optionElement.textContent = option.text;
             modelSelect.appendChild(optionElement);
         });
-        
+
         // 设置默认值
         if (options.length > 0) {
             this.settings.aiModel = options[0].value;
@@ -1450,30 +1466,30 @@ $$
 
     async improveTextWithAI() {
         if (!this.checkAIAvailable()) return;
-        
+
         const editor = document.getElementById('editor');
         const selectedText = this.getSelectedText(editor);
         const textToImprove = selectedText || editor.value;
-        
+
         if (!textToImprove.trim()) {
             this.showMessage('请先输入或选择要改进的文本');
             return;
         }
-        
+
         this.showLoading('AI 正在改进文本...');
-        
+
         try {
             // 使用非流式方式，等待完整响应后再更新笔记
             const improvedText = await this.aiManager.improveText(textToImprove);
-            
+
             if (selectedText) {
                 this.replaceSelectedText(editor, improvedText);
             } else {
                 editor.value = improvedText;
             }
-            
+
             this.onContentChange();
-            
+
             this.showMessage('文本改进完成');
         } catch (error) {
             this.showMessage('AI 改进失败: ' + error.message);
@@ -1484,27 +1500,27 @@ $$
 
     async summarizeWithAI() {
         if (!this.checkAIAvailable()) return;
-        
+
         const editor = document.getElementById('editor');
         const content = editor.value;
-        
+
         if (!content.trim()) {
             this.showMessage('请先输入要总结的内容');
             return;
         }
-        
+
         this.showLoading('AI 正在生成摘要...');
-        
+
         try {
             // 使用非流式方式，等待完整响应后再更新笔记
             const summary = await this.aiManager.summarizeText(content);
-            
+
             // 在内容开头插入摘要
             const summarySection = `## 摘要\n\n${summary}\n\n---\n\n`;
             editor.value = summarySection + content;
-            
+
             this.onContentChange();
-            
+
             this.showMessage('摘要生成完成');
         } catch (error) {
             this.showMessage('AI 摘要失败: ' + error.message);
@@ -1515,30 +1531,30 @@ $$
 
     async translateWithAI() {
         if (!this.checkAIAvailable()) return;
-        
+
         const editor = document.getElementById('editor');
         const selectedText = this.getSelectedText(editor);
         const textToTranslate = selectedText || editor.value;
-        
+
         if (!textToTranslate.trim()) {
             this.showMessage('请先输入或选择要翻译的文本');
             return;
         }
-        
+
         // 简单的语言检测和目标语言设置
         const targetLang = this.detectLanguageAndGetTarget(textToTranslate);
-        
+
         this.showLoading('AI 正在翻译...');
-        
+
         try {
             const translatedText = await this.aiManager.translateText(textToTranslate, targetLang);
-            
+
             if (selectedText) {
                 this.replaceSelectedText(editor, translatedText);
             } else {
                 editor.value = translatedText;
             }
-            
+
             this.onContentChange();
             this.showMessage('翻译完成');
         } catch (error) {
@@ -1553,12 +1569,12 @@ $$
             this.showMessage('请先在设置中启用 AI 功能');
             return false;
         }
-        
+
         if (!this.settings.aiApiKey) {
             this.showMessage('请先在设置中配置 AI API 密钥');
             return false;
         }
-        
+
         return true;
     }
 
@@ -1574,7 +1590,7 @@ $$
         const before = textarea.value.substring(0, start);
         const after = textarea.value.substring(end);
         textarea.value = before + newText + after;
-        
+
         // 设置新的光标位置
         const newCursorPos = start + newText.length;
         textarea.setSelectionRange(newCursorPos, newCursorPos);
@@ -1584,7 +1600,7 @@ $$
         // 简单的中英文检测
         const chineseRegex = /[\u4e00-\u9fff]/;
         const hasChinese = chineseRegex.test(text);
-        
+
         return hasChinese ? 'English' : '中文';
     }
 
@@ -1604,7 +1620,7 @@ $$
         const chatPanel = document.getElementById('ai-chat-panel');
         if (chatPanel) {
             chatPanel.classList.toggle('open');
-            
+
             if (chatPanel.classList.contains('open')) {
                 // 聚焦输入框
                 setTimeout(() => {
@@ -1623,7 +1639,7 @@ $$
         const welcomeMessage = messagesContainer.querySelector('.ai-message');
         messagesContainer.innerHTML = '';
         messagesContainer.appendChild(welcomeMessage);
-        
+
         // 清空对话历史
         this.chatHistory = [];
         this.showMessage('对话已清空');
@@ -1632,11 +1648,11 @@ $$
     onAIChatInputChange(e) {
         const input = e.target;
         const sendBtn = document.getElementById('ai-chat-send');
-        
+
         // 自动调整高度
         input.style.height = 'auto';
         input.style.height = Math.min(input.scrollHeight, 100) + 'px';
-        
+
         // 控制发送按钮状态
         sendBtn.disabled = !input.value.trim();
     }
@@ -1661,28 +1677,28 @@ $$
             this.toggleSettings();
             return;
         }
-        
+
         const input = document.getElementById('ai-chat-input');
         const message = input.value.trim();
-        
+
         if (!message) return;
-        
+
         // 添加用户消息到界面
         this.addChatMessage(message, 'user');
-        
+
         // 清空输入框
         input.value = '';
         input.style.height = 'auto';
         document.getElementById('ai-chat-send').disabled = true;
-        
+
         // 显示 AI 正在输入
         this.showAITyping();
-        
+
         try {
             // 获取当前笔记内容作为上下文
             const currentNote = this.getCurrentNoteContent();
             const contextMessage = currentNote ? `当前笔记内容：\n${currentNote}\n\n用户问题：${message}` : message;
-            
+
             // 准备消息历史
             const messages = [
                 {
@@ -1695,16 +1711,16 @@ $$
                     content: contextMessage
                 }
             ];
-            
+
             // 移除输入指示器
             this.hideAITyping();
-            
+
             // 创建AI消息容器用于流式显示
             const aiMessageElement = this.addChatMessage('', 'ai');
             const contentElement = aiMessageElement.querySelector('.message-content p');
-            
+
             let fullResponse = '';
-            
+
             // 使用流式响应
             await this.aiManager.makeStreamRequest(messages, (chunk) => {
                 fullResponse += chunk;
@@ -1713,18 +1729,18 @@ $$
                 const messagesContainer = document.getElementById('ai-chat-messages');
                 messagesContainer.scrollTop = messagesContainer.scrollHeight;
             });
-            
+
             // 更新对话历史
             this.chatHistory.push(
                 { role: 'user', content: message },
                 { role: 'assistant', content: fullResponse }
             );
-            
+
             // 限制对话历史长度
             if (this.chatHistory.length > 20) {
                 this.chatHistory = this.chatHistory.slice(-20);
             }
-            
+
         } catch (error) {
             this.hideAITyping();
             this.addChatMessage(`抱歉，AI 服务出现错误：${error.message}`, 'ai');
@@ -1735,10 +1751,10 @@ $$
         const messagesContainer = document.getElementById('ai-chat-messages');
         const messageDiv = document.createElement('div');
         messageDiv.className = type === 'user' ? 'user-message' : 'ai-message';
-        
+
         const avatar = document.createElement('div');
         avatar.className = type === 'user' ? 'user-avatar' : 'ai-avatar';
-        
+
         if (type === 'user') {
             avatar.innerHTML = `
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
@@ -1752,17 +1768,17 @@ $$
                 </svg>
             `;
         }
-        
+
         const messageContent = document.createElement('div');
         messageContent.className = 'message-content';
         messageContent.innerHTML = `<p>${this.formatMessageContent(content)}</p>`;
-        
+
         messageDiv.appendChild(avatar);
         messageDiv.appendChild(messageContent);
-        
+
         messagesContainer.appendChild(messageDiv);
         messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        
+
         return messageDiv;
     }
 
@@ -1782,7 +1798,7 @@ $$
                 <span></span>
             </div>
         `;
-        
+
         messagesContainer.appendChild(typingDiv);
         messagesContainer.scrollTop = messagesContainer.scrollHeight;
     }
@@ -1797,9 +1813,9 @@ $$
     getCurrentNoteContent() {
         const title = document.getElementById('note-title').value;
         const content = document.getElementById('editor').value;
-        
+
         if (!title && !content) return null;
-        
+
         return `标题：${title || '无标题'}\n内容：${content || '暂无内容'}`;
     }
 
@@ -1953,14 +1969,14 @@ $$
 
         // 更新编辑器内容
         editor.value = beforeText + insertText + afterText;
-        
+
         // 设置光标位置
         const newCursorPos = start + insertText.length + cursorOffset;
         editor.setSelectionRange(newCursorPos, newCursorPos);
-        
+
         // 触发输入事件以保存内容
         editor.dispatchEvent(new Event('input'));
-        
+
         // 聚焦编辑器
         editor.focus();
     }
