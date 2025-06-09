@@ -47,9 +47,6 @@ class NotesApp {
                 // 等待 1.5s
                 await new Promise(resolve => setTimeout(resolve, 500));
 
-                await this.syncFromCloud();
-                await this.syncSettingsFromCloud();
-
                 // 重新启动自动同步
                 this.startAutoSync();
 
