@@ -25,17 +25,29 @@ class NotesApp {
     }
 
     // 初始化应用
+    // 修改初始化方法
     async init() {
         await this.loadSettings();
 
-        // 强制刷新笔记列表 - 每次打开网页都重新同步
+        // 如果启用了云同步，每次打开网页都重新激活云同步
         if (this.settings.cloudSync) {
             try {
-                // 先从云端获取最新数据
+                this.showToast('正在重新激活云同步...');
+
+                // 先停止可能存在的自动同步
+                this.stopAutoSync();
+
+                // 重新从云端同步数据（模拟重新打开云同步）
                 await this.syncFromCloud();
-                this.showToast('笔记列表已刷新');
+                await this.syncSettingsFromCloud();
+
+                // 重新启动自动同步
+                this.startAutoSync();
+
+                this.showToast('云同步已重新激活，数据已同步');
             } catch (error) {
-                console.error('强制刷新失败:', error);
+                console.error('重新激活云同步失败:', error);
+                this.showToast('云同步重新激活失败: ' + error.message, 'error');
                 // 如果云端同步失败，仍然加载本地数据
                 await this.loadNotes();
             }
@@ -51,19 +63,14 @@ class NotesApp {
         this.applyTheme();
         this.applyFontSize();
         this.updateSettingsUI();
-        this.renderNotesList();
-
-        // 只有在启用云同步时才启动自动同步
-        if (this.settings.cloudSync) {
-            this.startAutoSync();
-        }
+        await this.renderNotesList();
 
         // 如果没有笔记，显示欢迎信息
         if (this.notes.length === 0) {
             this.showWelcomeMessage();
         } else {
             // 加载第一篇笔记
-            this.loadNote(this.notes[0].id);
+            await this.loadNote(this.notes[0].id);
         }
     }
 
@@ -251,24 +258,24 @@ class NotesApp {
     // 保存当前笔记
     async saveCurrentNote(showToast = true) {
         if (!this.currentNote) return;
-    
+
         const title = document.getElementById('note-title').value.trim() || '无标题';
         const content = document.getElementById('editor').value;
-    
+
         // 更新当前笔记对象
         this.currentNote.title = title;
         this.currentNote.content = content;
         this.currentNote.updatedAt = new Date().toISOString();
-    
+
         // 确保在notes数组中也更新了对应的笔记
         const noteIndex = this.notes.findIndex(note => note.id === this.currentNote.id);
         if (noteIndex !== -1) {
             this.notes[noteIndex] = { ...this.currentNote };
         }
-    
+
         this.saveNotes();
         await this.renderNotesList();
-    
+
         // 如果启用云同步，立即同步到云端（实时同步）
         if (this.settings.cloudSync) {
             try {
@@ -277,7 +284,7 @@ class NotesApp {
                 console.error('实时同步失败:', error);
             }
         }
-    
+
         // 显示保存成功提示
         if (showToast) {
             this.showToast('笔记已保存');
@@ -597,7 +604,7 @@ class NotesApp {
         if (this.settings.autoSave) {
             this.scheduleAutoSave();
         }
-    
+
         // 增加实时同步调度
         if (this.settings.cloudSync) {
             this.scheduleRealTimeSync();
@@ -609,11 +616,11 @@ class NotesApp {
         if (this.isPreviewMode) {
             this.updatePreview();
         }
-    
+
         if (this.settings.autoSave) {
             this.scheduleAutoSave();
         }
-    
+
         // 增加实时同步调度
         if (this.settings.cloudSync) {
             this.scheduleRealTimeSync();
@@ -625,7 +632,7 @@ class NotesApp {
         if (this.autoSaveTimer) {
             clearTimeout(this.autoSaveTimer);
         }
-    
+
         this.autoSaveTimer = setTimeout(async () => {
             await this.saveCurrentNote(false); // 不显示提示
         }, 500); // 减少到500毫秒
@@ -635,7 +642,7 @@ class NotesApp {
         if (this.realTimeSyncTimer) {
             clearTimeout(this.realTimeSyncTimer);
         }
-    
+
         this.realTimeSyncTimer = setTimeout(async () => {
             if (this.settings.cloudSync && this.currentNote) {
                 try {
