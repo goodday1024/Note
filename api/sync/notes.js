@@ -22,15 +22,32 @@ module.exports = async function handler(req, res) {
     
     const { notes, userId = 'default' } = req.body;
     
-    const operations = notes.map(note => ({
-      updateOne: {
-        filter: { id: note.id, userId },
-        update: { ...note, userId, updatedAt: new Date() },
-        upsert: true
-      }
-    }));
+    // 获取服务器上现有的所有笔记
+    const existingNotes = await Note.find({ userId });
+    const clientNoteIds = new Set(notes.map(note => note.id));
     
-    await Note.bulkWrite(operations);
+    // 找出需要删除的笔记（服务器有但客户端没有的）
+    const notesToDelete = existingNotes.filter(note => !clientNoteIds.has(note.id));
+    
+    // 删除服务器上多余的笔记
+    if (notesToDelete.length > 0) {
+      const deleteIds = notesToDelete.map(note => note.id);
+      await Note.deleteMany({ id: { $in: deleteIds }, userId });
+      console.log(`删除了 ${notesToDelete.length} 个笔记:`, deleteIds);
+    }
+    
+    // 更新/插入客户端的笔记
+    if (notes.length > 0) {
+      const operations = notes.map(note => ({
+        updateOne: {
+          filter: { id: note.id, userId },
+          update: { ...note, userId, updatedAt: new Date() },
+          upsert: true
+        }
+      }));
+      
+      await Note.bulkWrite(operations);
+    }
     
     // 返回所有笔记
     const allNotes = await Note.find({ userId }).sort({ updatedAt: -1 });
