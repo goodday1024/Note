@@ -12,7 +12,8 @@ class NotesApp {
             aiEnabled: true,
             aiProvider: 'openai',
             aiApiKey: '',
-            aiModel: 'gpt-3.5-turbo'
+            aiModel: 'gpt-3.5-turbo',
+            customStyleUrl: ''
         };
         this.aiManager = null;
         this.isPreviewMode = false;
@@ -87,6 +88,8 @@ class NotesApp {
         const aiProviderSelect = document.getElementById('ai-provider-select');
         const aiApiKey = document.getElementById('ai-api-key');
         const aiModelSelect = document.getElementById('ai-model-select');
+        const markdownDemoBtn = document.getElementById('markdown-demo-btn');
+        const customStyleUrlInput = document.getElementById('custom-style-url');
         
         if (closeSettings) closeSettings.addEventListener('click', () => this.toggleSettings());
         if (themeSelect) themeSelect.addEventListener('change', (e) => this.changeTheme(e.target.value));
@@ -97,6 +100,8 @@ class NotesApp {
         if (aiEnabledToggle) aiEnabledToggle.addEventListener('change', (e) => this.toggleAI(e.target.checked));
         if (aiProviderSelect) aiProviderSelect.addEventListener('change', (e) => this.changeAIProvider(e.target.value));
         if (aiApiKey) aiApiKey.addEventListener('input', (e) => this.updateAIApiKey(e.target.value));
+        if (markdownDemoBtn) markdownDemoBtn.addEventListener('click', () => this.showMarkdownDemo());
+        if (customStyleUrlInput) customStyleUrlInput.addEventListener('input', (e) => this.updateCustomStyleUrl(e.target.value));
         if (aiModelSelect) aiModelSelect.addEventListener('change', (e) => this.changeAIModel(e.target.value));
         
         // AI 聊天面板
@@ -866,8 +871,15 @@ class NotesApp {
         if (cloudSyncToggle) cloudSyncToggle.checked = this.settings.cloudSync;
         if (userIdInput) userIdInput.value = this.settings.userId || '';
         
+        // 更新自定义样式URL
+        const customStyleUrlInput = document.getElementById('custom-style-url');
+        if (customStyleUrlInput) customStyleUrlInput.value = this.settings.customStyleUrl || '';
+        
         // 更新AI设置
         this.updateAIUI();
+        
+        // 应用自定义样式
+        this.applyCustomStyle();
     }
 
     // 云端同步方法
@@ -1137,6 +1149,143 @@ class NotesApp {
         this.saveSettings();
         this.aiManager.updateSettings(this.settings);
         this.showMessage(`AI 模型已切换到 ${model}`);
+    }
+
+    // 更新自定义样式URL
+    updateCustomStyleUrl(url) {
+        this.settings.customStyleUrl = url;
+        this.saveSettings();
+        this.applyCustomStyle();
+        if (url) {
+            this.showMessage('自定义样式已应用');
+        } else {
+            this.showMessage('自定义样式已移除');
+        }
+    }
+
+    // 应用自定义样式
+    applyCustomStyle() {
+        // 移除之前的自定义样式
+        const existingCustomStyle = document.getElementById('custom-style');
+        if (existingCustomStyle) {
+            existingCustomStyle.remove();
+        }
+
+        // 如果有自定义样式URL，则加载
+        if (this.settings.customStyleUrl) {
+            const link = document.createElement('link');
+            link.id = 'custom-style';
+            link.rel = 'stylesheet';
+            link.href = this.settings.customStyleUrl;
+            link.onerror = () => {
+                this.showMessage('自定义样式加载失败，请检查URL是否正确', 'error');
+            };
+            document.head.appendChild(link);
+        }
+    }
+
+    // 显示Markdown演示
+    showMarkdownDemo() {
+        const demoContent = `# Markdown 语法演示
+
+## 基础语法
+
+### 文本格式
+**粗体文本**  
+*斜体文本*  
+~~删除线~~  
+\`行内代码\`
+
+### 列表
+#### 无序列表
+- 项目 1
+- 项目 2
+  - 子项目 2.1
+  - 子项目 2.2
+
+#### 有序列表
+1. 第一项
+2. 第二项
+3. 第三项
+
+### 链接和图片
+[链接文本](https://example.com)
+![图片描述](https://via.placeholder.com/150)
+
+### 引用
+> 这是一个引用块
+> 可以包含多行内容
+
+### 代码块
+\`\`\`javascript
+function hello() {
+    console.log("Hello, World!");
+}
+\`\`\`
+
+### 表格
+| 列1 | 列2 | 列3 |
+|-----|-----|-----|
+| 内容1 | 内容2 | 内容3 |
+| 内容4 | 内容5 | 内容6 |
+
+---
+
+## 数学公式
+
+### 行内公式
+这是一个行内公式：$E = mc^2$
+
+### 公式块
+$$
+\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}
+$$
+
+$$
+\\begin{pmatrix}
+a & b \\\\
+c & d
+\\end{pmatrix}
+$$
+
+### 更多数学示例
+- 分数：$\\frac{a}{b}$
+- 根号：$\\sqrt{x^2 + y^2}$
+- 求和：$\\sum_{i=1}^{n} x_i$
+- 积分：$\\int_0^1 f(x) dx$
+- 极限：$\\lim_{x \\to \\infty} f(x)$
+
+---
+
+## 任务列表
+- [x] 已完成的任务
+- [ ] 未完成的任务
+- [ ] 另一个任务
+
+## 水平分割线
+
+---
+
+这就是 Markdown 的基本语法演示！`;
+
+        // 创建新笔记并填入演示内容
+        const note = {
+            id: this.generateId(),
+            title: 'Markdown 演示',
+            content: demoContent,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            tags: []
+        };
+        
+        this.notes.unshift(note);
+        this.saveNotes();
+        this.renderNotesList();
+        this.loadNote(note.id);
+        this.showMessage('Markdown 演示笔记已创建');
+        
+        // 关闭设置面板
+        this.toggleSettings();
     }
 
     updateAIModelOptions() {
